@@ -133,13 +133,15 @@ def template_match(source_image_path: str, template_image_path: str, threshold: 
             pt = (pt[0] + roi[0], pt[1] + roi[1])
         x1, y1, x2, y2 = pt[0], pt[1], pt[0] + template_w, pt[1] + template_h
         matches.append((x1, y1, x2, y2))
-        cv2.rectangle(source_image, (x1, y1), (x2, y2), (0, 255, 0), 2)
-
-    result_image_path = 'result.png'
-    cv2.imwrite(result_image_path, source_image)
 
     if scaling_factor < 1.0:
         matches = shrink_boxes(matches, scaling_factor)
+
+    for (x1, y1, x2, y2) in matches:
+        cv2.rectangle(source_image, (x1, y1), (x2, y2), (0, 255, 0), 1)
+
+    result_image_path = 'result.png'
+    cv2.imwrite(result_image_path, source_image)
     return matches
 
 def template_match_multiple(source_image_path: str, template_image_paths: List[str], threshold: float = 0.8, roi: Optional[Tuple[int, int, int, int]] = None, scaling_factor: float = 1.0) -> List[Tuple[int, int, int, int]]:
@@ -225,7 +227,7 @@ def template_match_digits(source_image_path: str, template_image_paths: List[str
     Returns:
     - merged_boxes: List of merged bounding boxes after template matching.
     """
-    source_image = load_image(source_image_path, preprocess=True)
+    source_image = load_image(source_image_path, preprocess=False)
     if roi:
         x, y, w, h = roi
         source_image = source_image[y:y + h, x:x + w]
@@ -240,4 +242,7 @@ def template_match_digits(source_image_path: str, template_image_paths: List[str
     cv2.imwrite(result_image_path, source_image)
     return merged_boxes
 
+if __name__ == "__main__":
+    template_image_paths = [f'assets/{i}.png' for i in range(1, 10)]
+    template_match_digits('screenshot.png',template_image_paths)
 

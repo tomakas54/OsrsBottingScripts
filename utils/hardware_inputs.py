@@ -78,14 +78,14 @@ keyCodeMap = {
     'down_arrow'        : "0x28",
     'left_arrow'        : "0x25",
     'right_arrow'       : "0x27",
+    'enter'             : "0x0D"
 
 }
 
 
-def toKeyCode(c : str) -> int:
+def toKeyCode(c: str) -> int:
     keyCode = keyCodeMap[c]
     return int(keyCode, base=16)
-
 
 class MOUSEINPUT(ctypes.Structure):
     _fields_ = (("dx", wintypes.LONG),
@@ -123,18 +123,18 @@ class INPUT(ctypes.Structure):
 
 LPINPUT = ctypes.POINTER(INPUT)
 
-def PressKey(hexKeyCode : str) -> None:
+def PressKey(hexKeyCode: int) -> None:
     x = INPUT(type=INPUT_KEYBOARD,
               ki=KEYBDINPUT(wVk=hexKeyCode))
     user32.SendInput(1, ctypes.byref(x), ctypes.sizeof(x))
 
-def ReleaseKey(hexKeyCode):
+def ReleaseKey(hexKeyCode: int) -> None:
     x = INPUT(type=INPUT_KEYBOARD,
               ki=KEYBDINPUT(wVk=hexKeyCode,
                             dwFlags=KEYEVENTF_KEYUP))
     user32.SendInput(1, ctypes.byref(x), ctypes.sizeof(x))
 
-def PressMouseButton(button : str) -> None:
+def PressMouseButton(button: str) -> None:
     if button == 'left':
         event = MOUSEEVENTF_LEFTDOWN
     elif button == 'right':
@@ -148,7 +148,7 @@ def PressMouseButton(button : str) -> None:
               mi=MOUSEINPUT(dwFlags=event))
     user32.SendInput(1, ctypes.byref(x), ctypes.sizeof(x))
 
-def ReleaseMouseButton(button : str) -> None:
+def ReleaseMouseButton(button: str) -> None:
     if button == 'left':
         event = MOUSEEVENTF_LEFTUP
     elif button == 'right':
@@ -162,9 +162,7 @@ def ReleaseMouseButton(button : str) -> None:
               mi=MOUSEINPUT(dwFlags=event))
     user32.SendInput(1, ctypes.byref(x), ctypes.sizeof(x))
 
-
-
-def PressButton(button : str) -> None:
+def PressButton(button: str) -> None:
     input_key = toKeyCode(button)
     PressKey(input_key)
     time.sleep(random.uniform(0.1, 0.5))
@@ -176,11 +174,20 @@ def Click(button: str) -> None:
     ReleaseMouseButton(button)
     time.sleep(random.uniform(0.1, 0.2))
 
-def HoldButton(button : str, duration : float) -> None:
+def HoldButton(button: str, duration: float) -> None:
     input_key = toKeyCode(button)
     PressKey(input_key)
     time.sleep(duration)
     ReleaseKey(input_key)
 
+def Write(string: str) -> None:
+    for char in string:
+        if char == ' ':
+            PressButton('space')
+        else:
+            PressButton(char)
+        time.sleep(random.uniform(0.05, 0.15))  # Small delay between key presses
 
+# Example usage:
+# Write("hello world")
 

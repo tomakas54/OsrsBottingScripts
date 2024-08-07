@@ -10,7 +10,7 @@ def move_window_to_top_right(hwnd, window_width, window_height):
     screen_width = win32api.GetSystemMetrics(0)  # Get screen width
 
     # Calculate the top-right corner position
-    x = 0
+    x = 10
     y = 0  # Top of the screen
 
     # Move the window

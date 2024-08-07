@@ -58,7 +58,7 @@ def pick_random_coordinate(coordinates : list, window_left : int, window_top : i
     Returns:
     - A tuple of absolute coordinates, or None if the list is empty.
     """
-    if not coordinates:
+    if len(coordinates) == 0:
         return None
     relative_coordinate = random.choice(coordinates)
     return get_absolute_coordinates(window_left, window_top, int(relative_coordinate[1]), int(relative_coordinate[0]))
@@ -127,4 +127,6 @@ def generate_random_coord_in_roi(roi):
     random_x = random.uniform(x_start, x_start + width)
     random_y = random.uniform(y_start, y_start + height)
     return int(random_x), int(random_y)
+
+
 
