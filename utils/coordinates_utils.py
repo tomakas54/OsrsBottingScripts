@@ -1,13 +1,25 @@
 import numpy as np
 import random
 from utils.hardware_inputs import *
+
 def find_color_coordinates(image, target_colors, tolerance=20, roi=None):
-    """Find coordinates of specified colors in the image."""
+    """
+    Find coordinates of specified colors in the image.
+
+    Parameters:
+    - image: The input image.
+    - target_colors: List of target colors to find.
+    - tolerance: Color tolerance for matching.
+    - roi: Region of interest as a tuple (x, y, width, height). If None, the whole image is used.
+
+    Returns:
+    - An array of coordinates matching the target colors.
+    """
     img_array = np.array(image)
     if roi:
         x_start, y_start, width, height = roi
-        img_array = img_array[y_start:y_start+height, x_start:x_start+width]
-    
+        img_array = img_array[y_start:y_start + height, x_start:x_start + width]
+
     all_coordinates = []
     for target_color in target_colors:
         diff = np.abs(img_array - target_color)
@@ -16,32 +28,65 @@ def find_color_coordinates(image, target_colors, tolerance=20, roi=None):
         if roi:
             coordinates += [y_start, x_start]
         all_coordinates.extend(coordinates)
-    
+
     return np.array(all_coordinates)
 
-def get_absolute_coordinates(window_left, window_top, relative_x, relative_y):
-    """Convert relative coordinates to absolute screen coordinates."""
-    absolute_x = window_left + relative_x
-    absolute_y = window_top + relative_y
-    return absolute_x, absolute_y
+def get_absolute_coordinates(window_left : int, window_top : int, relative_x : int, relative_y : int) -> tuple:
+    """
+    Convert relative coordinates to absolute screen coordinates.
 
-def pick_random_coordinate(coordinates, window_left, window_top):
-    """Select a random coordinate from the list and convert to absolute."""
-    if coordinates.size == 0:
+    Parameters:
+    - window_left: The left position of the window.
+    - window_top: The top position of the window.
+    - relative_x: Relative x coordinate.
+    - relative_y: Relative y coordinate.
+
+    Returns:
+    - A tuple of absolute x and y coordinates.
+    """
+    return window_left + relative_x, window_top + relative_y
+
+def pick_random_coordinate(coordinates : list, window_left : int, window_top : int) -> tuple:
+    """
+    Select a random coordinate from the list and convert to absolute.
+
+    Parameters:
+    - coordinates: List of relative coordinates.
+    - window_left: The left position of the window.
+    - window_top: The top position of the window.
+
+    Returns:
+    - A tuple of absolute coordinates, or None if the list is empty.
+    """
+    if not coordinates.any():
         return None
     relative_coordinate = random.choice(coordinates)
-    absolute_coordinate = get_absolute_coordinates(window_left, window_top, int(relative_coordinate[1]), int(relative_coordinate[0]))
-    return absolute_coordinate
+    return get_absolute_coordinates(window_left, window_top, int(relative_coordinate[1]), int(relative_coordinate[0]))
 
-def click_coordinates(cursor, coordinates):
-    """Click on the specified coordinates using the cursor."""
+
+def click_coordinates(cursor, coordinates : list) -> None:
+    """
+    Click on the specified coordinates using the cursor.
+
+    Parameters:
+    - cursor: The cursor object.
+    - coordinates: The coordinates to click.
+    """
     if coordinates:
         cursor.move_to(coordinates)
         Click('left')
         
-def generate_random_absolute_coords(abs_x,abs_y):
-    x = random.uniform(0,abs_x)
-    y = random.uniform(0,abs_y)
-    rand_abs_coords = x,y
-    return rand_abs_coords
+def generate_random_absolute_coords(abs_x : int, abs_y : int) -> tuple:
+    """
+    Generate random absolute coordinates within the given range.
+
+    Parameters:
+    - abs_x: The maximum x coordinate.
+    - abs_y: The maximum y coordinate.
+
+    Returns:
+    - A tuple of random absolute x and y coordinates.
+    """
+    return random.uniform(0, abs_x), random.uniform(0, abs_y)
+
 

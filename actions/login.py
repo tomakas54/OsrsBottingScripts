@@ -1,19 +1,26 @@
 import sys
 import os
+import pyautogui
+import time
+import random
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from utils.image_recognition_utils import *
 from utils.coordinates_utils import *
 from utils.window_utils import *
-from humancursor import SystemCursor
-import pyautogui
-import time
-import random
 
 
-def get_account_info(filename='account_data.txt'):
-    """Reads the account email and password from the specified file."""
+def get_account_info(filename='account_data.txt') -> tuple:
+    """
+    Reads the account email and password from the specified file.
+
+    Parameters:
+    - filename: The name of the file containing the account information.
+
+    Returns:
+    - A tuple containing the email and password, or (None, None) if an error occurs.
+    """
     try:
         with open(filename, 'r') as file:
             lines = file.readlines()
@@ -26,14 +33,18 @@ def get_account_info(filename='account_data.txt'):
     except Exception as e:
         print(f"An error occurred while reading {filename}: {e}")
         return None, None
-def login(cursor,hwnd):
-    screenshot_path = take_screenshot(hwnd)
     
-    # Example usage
+def login(cursor, hwnd: int) -> None:
+    screenshot_path = take_screenshot(hwnd)
+    print(f"Screenshot saved to: {screenshot_path}")
+    
     source_image_path = screenshot_path  # Use the screenshot as the source image
     template_image_path = 'assets/existing_user.png'  # Path to the template image
-    random_coordinates = template_match(source_image_path, template_image_path, threshold=0.8)
-    print(random_coordinates)    
+    print(f"Source image path: {source_image_path}")
+    print(f"Template image path: {template_image_path}")
+
+    random_coordinates = generate_random_b_box_coord(template_match(source_image_path, template_image_path, threshold=0.8))
+    print(f"Random coordinates: {random_coordinates}")
 
     if random_coordinates:
         # Get window position
@@ -42,7 +53,7 @@ def login(cursor,hwnd):
 
         # Convert relative coordinates to absolute coordinates
         absolute_coordinates = [(x + window_left, y + window_top) for x, y in random_coordinates]
-        print(absolute_coordinates)        
+        print(f"Absolute coordinates: {absolute_coordinates}")
 
         # Click on the first absolute coordinate
         cursor.click_on(absolute_coordinates[0])
@@ -61,11 +72,12 @@ def login(cursor,hwnd):
 
         screenshot_path = take_screenshot(hwnd)  
         template_image_path = 'assets/login.png'  # Path to the template image
-        random_coordinates = template_match(source_image_path, template_image_path, threshold=0.8)
+        random_coordinates = generate_random_b_box_coord(template_match(source_image_path, template_image_path, threshold=0.8))
         
         if random_coordinates:
             absolute_coordinates = [(x + window_left, y + window_top) for x, y in random_coordinates]
-            print(absolute_coordinates)        
+            print(f"Absolute coordinates: {absolute_coordinates}")
+
             # Click on the first absolute coordinate
             cursor.click_on(absolute_coordinates[0])
 

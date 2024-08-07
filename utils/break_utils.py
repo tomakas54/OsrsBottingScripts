@@ -1,6 +1,6 @@
 import time
 import random
-def generate_botting_time(min_time):
+def generate_botting_time(min_time : int) -> float:
     # Generate a random time to stop in seconds, ensuring it's between min_time hours and 6 hours (21600 seconds)
     stop_time_seconds = random.uniform(min_time * 3600, 21600)
     # Get the current time
@@ -13,7 +13,7 @@ def generate_botting_time(min_time):
     return stop_time_epoch
 
 
-def take_a_break(min_dur,max_dur):
+def take_a_break(min_dur : int, max_dur : int) -> None:
     """Take a break for a random duration between 5 to 10 minutes."""
     break_duration = random.uniform(min_dur,max_dur)  # 5 to 10 minutes in seconds
     print(f"Taking a break for {break_duration / 60:.2f} minutes.")

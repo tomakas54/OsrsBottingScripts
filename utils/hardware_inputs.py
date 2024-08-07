@@ -78,7 +78,7 @@ keyCodeMap = {
 }
 
 
-def toKeyCode(c):
+def toKeyCode(c : str) -> int:
     keyCode = keyCodeMap[c]
     return int(keyCode, base=16)
 
@@ -119,7 +119,7 @@ class INPUT(ctypes.Structure):
 
 LPINPUT = ctypes.POINTER(INPUT)
 
-def PressKey(hexKeyCode):
+def PressKey(hexKeyCode : str) -> None:
     x = INPUT(type=INPUT_KEYBOARD,
               ki=KEYBDINPUT(wVk=hexKeyCode))
     user32.SendInput(1, ctypes.byref(x), ctypes.sizeof(x))
@@ -130,7 +130,7 @@ def ReleaseKey(hexKeyCode):
                             dwFlags=KEYEVENTF_KEYUP))
     user32.SendInput(1, ctypes.byref(x), ctypes.sizeof(x))
 
-def PressMouseButton(button):
+def PressMouseButton(button : str) -> None:
     if button == 'left':
         event = MOUSEEVENTF_LEFTDOWN
     elif button == 'right':
@@ -144,7 +144,7 @@ def PressMouseButton(button):
               mi=MOUSEINPUT(dwFlags=event))
     user32.SendInput(1, ctypes.byref(x), ctypes.sizeof(x))
 
-def ReleaseMouseButton(button):
+def ReleaseMouseButton(button : str) -> None:
     if button == 'left':
         event = MOUSEEVENTF_LEFTUP
     elif button == 'right':
@@ -160,24 +160,17 @@ def ReleaseMouseButton(button):
 
 
 
-def PressButton(button):
+def PressButton(button : str) -> None:
     input_key = toKeyCode(button)
     PressKey(input_key)
     time.sleep(random.uniform(0.1, 0.5))
     ReleaseKey(input_key)
 
-def Click(button):
+def Click(button: str) -> None:
     PressMouseButton(button)
     time.sleep(random.uniform(0.1, 0.2))
     ReleaseMouseButton(button)
     time.sleep(random.uniform(0.1, 0.2))
 
-def WriteString(string):
-    for char in string:
-        if char.lower() in keyCodeMap:
-            PressButton(char.lower())
-        elif char == ' ':
-            PressButton('space')
-        else:
-            raise ValueError(f"Unsupported character: {char}")
+
 

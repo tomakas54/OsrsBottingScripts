@@ -2,6 +2,8 @@ import win32api
 import win32gui
 import pyautogui
 import pygetwindow as gw
+import cv2
+import numpy as np
 
 def move_window_to_top_right(hwnd, window_width, window_height):
     # Get the screen resolution
@@ -13,6 +15,15 @@ def move_window_to_top_right(hwnd, window_width, window_height):
 
     # Move the window
     win32gui.MoveWindow(hwnd, x-10, y, window_width, window_height, True)
+
+def take_screenshot(hwnd):
+    # Take a screenshot of the specified region
+    screenshot, left, top, width, height = get_window_screenshot(hwnd)
+    screenshot = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2BGR)
+    screenshot_path = 'screenshot.png'
+    cv2.imwrite(screenshot_path, screenshot)
+    # print(f"Screenshot saved to {screenshot_path}")
+    return screenshot_path
 
 def findWindow_runelite(Name):
     global hwnd

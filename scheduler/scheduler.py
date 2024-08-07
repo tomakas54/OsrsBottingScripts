@@ -1,60 +1,62 @@
 import time
 import os
 import sys
+from typing import Callable, Optional
+from datetime import datetime
 
-# Append the parent directory of the current file to the sys.path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-actions_dir = os.path.join(os.path.dirname(__file__), '..', 'actions')
-sys.path.append(actions_dir)
+# Add necessary directories to sys.path
+sys.path.extend([
+    os.path.abspath(os.path.join(os.path.dirname(__file__), '..')),
+    os.path.join(os.path.dirname(__file__), '..', 'actions')
+])
 
-print("Current working directory:", os.getcwd())
-print("Python path:", sys.path)
 from utils.break_utils import generate_botting_time
-from actions.stun_alch import stun_alch
-from actions.fishing import fish
+from actions.fishing import FishingBot  # Import the FishingBot class
 
-def get_script_status():
-    if not os.path.exists('script_status.txt'):
-        return 'success'
-    with open('script_status.txt', 'r') as file:
-        status = file.read().strip()
-    return status
+class BotScheduler:
+    def __init__(self, bot_class, status_file: str = 'script_status.txt'):
+        self.bot_class = bot_class
+        self.status_file = status_file
+        self.script_failed = False
 
-def run_bot_script():
-    global script_failed
-    try:
-        #stun_alch('assets/curse.png', 'assets/fletch_lvl.png', 'assets/alch.png', 'assets/longbow_note.png')
-        fish()
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        script_failed = True
+    def get_script_status(self) -> str:
+        if not os.path.exists(self.status_file):
+            return 'success'
+        with open(self.status_file, 'r') as file:
+            return file.read().strip()
 
-def main():
-    global script_failed
-    script_failed = False
-    
-    while not script_failed:
-        # Run the bot script
-        run_bot_script()
+    def run_bot_script(self) -> None:
+        try:
+            bot_instance = self.bot_class()
+            bot_instance.fish()  # Assuming the main method is called 'fish'
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            self.script_failed = True
+
+    def sleep_until_next_run(self, hours: int) -> None:
+        next_start_time = generate_botting_time(hours)
+        sleep_duration = max(0, next_start_time - time.time())
         
-        # Check script status
-        script_status = get_script_status()
-        if script_status == 'failed':
-            print("Script failed. Stopping the scheduler.")
-            break
-        
-        # Generate next start time
-        next_start_time_epoch = generate_botting_time(1)  # Ensuring the bot waits at least 30 minutes
-        print(next_start_time_epoch)
-        
-        # Calculate sleep duration
-        sleep_duration = next_start_time_epoch - time.time()
-        print(sleep_duration)
         if sleep_duration > 0:
-            print(f"Scheduler sleeping for {sleep_duration / 60:.2f} minutes.")
+            print(f"Scheduler sleeping until {datetime.fromtimestamp(next_start_time)}")
+            print(f"Sleep duration: {sleep_duration / 60:.2f} minutes")
             time.sleep(sleep_duration)
         else:
             print("Generated start time is in the past. Starting immediately.")
+
+    def run(self) -> None:
+        while not self.script_failed:
+            self.run_bot_script()
+            
+            if self.get_script_status() == 'failed':
+                print("Script failed. Stopping the scheduler.")
+                break
+            
+            self.sleep_until_next_run(1)  # Sleep for at least 1 hour
+
+def main():
+    scheduler = BotScheduler(FishingBot)
+    scheduler.run()
 
 if __name__ == "__main__":
     main()
