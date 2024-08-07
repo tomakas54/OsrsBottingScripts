@@ -14,6 +14,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from simpy.library import io
 from simpy.library.global_vals import *
 from actions.login import login
+from actions.camera import calibrate_camera
 from utils import break_utils, window_utils, coordinates_utils, image_recognition_utils,hardware_inputs
 from logout import logout
 
@@ -78,7 +79,7 @@ class FishingBot:
         #print('FISHING' if is_fishing else 'NOT FISHING')
 
         if not is_fishing:
-            time.sleep(random.uniform(1, 2))
+            time.sleep(random.uniform(1.5, 2.5))
             if image_recognition_utils.generate_random_b_box_coord(
                     image_recognition_utils.template_match(
                         screenshot_path, 
@@ -90,8 +91,9 @@ class FishingBot:
                     break_utils.take_a_break(5, 15)
                 self.handle_dropping()
 
-            fish_spot_coords = coordinates_utils.find_color_coordinates(screenshot, COLORS["fish_spot"], roi=(0, 0, window_width, window_height))
-            #fish_spot_coords = sorted(fish_spot_coords, key=self.distance_from_center)[:50]
+            fish_spot_coords = tuple(coordinates_utils.find_color_coordinates(screenshot, COLORS["fish_spot"], roi=(0, 0, window_width, window_height)))
+            fish_spot_coords = [tuple(coord) if isinstance(coord, np.ndarray) else coord for coord in fish_spot_coords]
+            fish_spot_coords = sorted(fish_spot_coords, key=self.distance_from_center)[:50]
             coordinates_utils.click_coordinates(self.cursor, coordinates_utils.pick_random_coordinate(fish_spot_coords,window_left,window_top))
 
             if random.random() < 0.8:
@@ -120,23 +122,18 @@ class FishingBot:
 
         listener_thread = threading.Thread(target=self.key_listener)
         listener_thread.start()
-
+        '''calibrate_camera('west')'''
         try:
             while time.time() < time_to_stop and not self.stop_event.is_set():
                 screenshot, _, _, _, _ = window_utils.get_window_screenshot(self.hwnd)
-                roi_xp_drop = (*RELATIVE_COORDS["xp_drop"], *ROI_SIZES["xp_drop"])
-                xp_coords = coordinates_utils.find_color_coordinates(screenshot, COLORS["xp_drop"], roi=roi_xp_drop)
-
-                if len(xp_coords) > 0:
-                    #print('XP FOUND')
+                if coordinates_utils.xp_check(screenshot):
+                    print('XP FOUND')
                     self.last_xp_drop_time = time.time()
-
                 if time.time() - self.last_xp_drop_time > 360:
                     print("XP NOT FOUND FOR A WHILE STOPPING SCRIPT")
                     self.script_failed = True
                     window_utils.update_status_file(True)
                     break
-
                 self.handle_fishing()
                 time.sleep(0.5)
 

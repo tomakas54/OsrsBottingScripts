@@ -58,13 +58,13 @@ def pick_random_coordinate(coordinates : list, window_left : int, window_top : i
     Returns:
     - A tuple of absolute coordinates, or None if the list is empty.
     """
-    if not coordinates.any():
+    if not coordinates:
         return None
     relative_coordinate = random.choice(coordinates)
     return get_absolute_coordinates(window_left, window_top, int(relative_coordinate[1]), int(relative_coordinate[0]))
 
 
-def click_coordinates(cursor, coordinates : list) -> None:
+def click_coordinates(cursor, coordinates : list, button : str = 'left') -> None:
     """
     Click on the specified coordinates using the cursor.
 
@@ -72,9 +72,13 @@ def click_coordinates(cursor, coordinates : list) -> None:
     - cursor: The cursor object.
     - coordinates: The coordinates to click.
     """
-    if coordinates:
+    if coordinates and button == 'left':
         cursor.move_to(coordinates)
-        Click('left')
+        Click(button)
+    if coordinates and button == 'right':
+        cursor.move_to(coordinates)
+        Click(button)
+    
         
 def generate_random_absolute_coords(abs_x : int, abs_y : int) -> tuple:
     """
@@ -89,4 +93,38 @@ def generate_random_absolute_coords(abs_x : int, abs_y : int) -> tuple:
     """
     return random.uniform(0, abs_x), random.uniform(0, abs_y)
 
+
+
+def xp_check(screenshot) -> bool:
+    RELATIVE_COORDS = {
+        "xp_drop": (450, 76),
+    }
+    ROI_SIZES = {
+        "xp_drop": (60, 100),
+    }
+    COLORS = {
+        "xp_drop": [(255, 0, 0)]
+    }
+    roi_xp_drop = (*RELATIVE_COORDS["xp_drop"], *ROI_SIZES["xp_drop"])
+    xp_coords = find_color_coordinates(screenshot, COLORS["xp_drop"], roi=roi_xp_drop)
+    if len(xp_coords) > 0:
+        is_xp = True
+    else:
+        is_xp = False
+    return is_xp
+
+def generate_random_coord_in_roi(roi):
+    """
+    Generate a random coordinate within the specified ROI.
+
+    Parameters:
+    - roi: Region of interest as a tuple (x, y, width, height).
+
+    Returns:
+    - A tuple of random coordinates (x, y) within the ROI.
+    """
+    x_start, y_start, width, height = roi
+    random_x = random.uniform(x_start, x_start + width)
+    random_y = random.uniform(y_start, y_start + height)
+    return int(random_x), int(random_y)
 

@@ -74,6 +74,10 @@ keyCodeMap = {
     'space'             : "0x20",
     'f3'                : "0x72",
     'f12'               : "0x7B",
+    'up_arrow'          : "0x26",
+    'down_arrow'        : "0x28",
+    'left_arrow'        : "0x25",
+    'right_arrow'       : "0x27",
 
 }
 
@@ -171,6 +175,12 @@ def Click(button: str) -> None:
     time.sleep(random.uniform(0.1, 0.2))
     ReleaseMouseButton(button)
     time.sleep(random.uniform(0.1, 0.2))
+
+def HoldButton(button : str, duration : float) -> None:
+    input_key = toKeyCode(button)
+    PressKey(input_key)
+    time.sleep(duration)
+    ReleaseKey(input_key)
 
 
 

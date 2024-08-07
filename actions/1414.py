@@ -232,4 +232,4 @@ def make_item(first_item_path, second_item_path, level_up_path):
         print(f"Total crafts: {craft_count}")
 
 if __name__ == "__main__":
-    make_item('assets/bow_u.png', 'assets/bow_string.png', 'assets/fletch_lvl.png')
+    make_item('assets/bow_u.png', 'assets/bow_string.png', 'assets/Congrats_flag.png')
