@@ -162,3 +162,6 @@ cython_debug/
 #.idea/
 
 /account_data.txt
+/result.png
+/screenshot.png
+/script_status.txt
