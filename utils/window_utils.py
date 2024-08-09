@@ -75,3 +75,6 @@ def get_account_name(filename='account_data.txt'):
 def update_status_file(status):
     with open('script_status.txt', 'w') as file:
         file.write('failed' if status else 'success')
+
+if __name__ == "__main__":
+    get_window_screenshot(findWindow_runelite('GIMGrupiokas'))

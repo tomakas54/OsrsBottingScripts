@@ -1,8 +1,9 @@
 import requests
 import time
+import json
 
-def get_game_data():
-    url = "http://localhost:8080/inv"
+def get_game_data(category):
+    url = f"http://localhost:8080/{category}"
     
     try:
         response = requests.get(url)
@@ -15,31 +16,12 @@ def get_game_data():
         print(f"An error occurred: {e}")
         return None
 
-def main():
-    retry_count = 0
-    max_retries = 5
-    base_delay = 2  # base delay in seconds
-
-    while True:
-        game_data = get_game_data()
-        if game_data:
-            print("Game Data Retrieved Successfully:")
-            print(game_data)
-            #print(game_data['game tick'])
-            #print(game_data['health'])
-            #print(game_data['npc name'])
-            retry_count = 0   #Reset retry count on success
-        else:
-            retry_count += 1
-            if retry_count > max_retries:
-                print("Max retries exceeded. Exiting.")
-                break
-            delay = base_delay * (2 ** (retry_count - 1))
-            print(f"Failed to retrieve game data. Retrying in {delay} seconds.")
-            time.sleep(delay)
-            continue  # Skip the regular sleep
-
-        time.sleep(0.6)
-
+def export_to_json(data, filename='live_data.json'):
+    with open(filename, 'w') as file:
+        json.dump(data, file, indent=4)
+    print(f"Data exported to {filename}")
 if __name__ == "__main__":
-    main()
+    while True:
+        export_to_json(get_game_data('objects'))
+        export_to_json(get_game_data('events'),'live_data_events.json')
+        time.sleep(0.5)

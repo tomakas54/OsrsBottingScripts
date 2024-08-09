@@ -32,6 +32,7 @@ def enter_pin(hwnd : int) -> None:
         f = open("account_data.txt", "r")
         lines = f.readlines()
         hardware_inputs.Write(lines[3].strip())
+        time.sleep(random.uniform(1,2))
         pin_entered = True
         return 
     else:
@@ -198,5 +199,5 @@ def take_item(hwnd,cursor,template_path) -> bool:
 
 if __name__ == "__main__":
     cursor = SystemCursor()
-    hwnd = window_utils.findWindow_runelite('ledushvente')
+    hwnd = window_utils.findWindow_runelite('GIMGrupiokas')
     enter_pin(hwnd)   

@@ -1,8 +1,8 @@
 import time
 import random
-def generate_botting_time(min_time : int) -> float:
+def generate_botting_time(min_time : int = 1, max_time : int = 6) -> float:
     # Generate a random time to stop in seconds, ensuring it's between min_time hours and 6 hours (21600 seconds)
-    stop_time_seconds = random.uniform(min_time * 3600, 21600)
+    stop_time_seconds = random.uniform(min_time*3600, max_time*3600)
     # Get the current time
     current_time_seconds = time.time()
     # Calculate the stop time in seconds since the epoch

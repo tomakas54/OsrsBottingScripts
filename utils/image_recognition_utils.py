@@ -3,6 +3,7 @@ import numpy as np
 import random
 import sys
 import os
+import glob
 from typing import List, Tuple, Optional
 
 # Add a helper function to verify if the path exists
@@ -144,13 +145,13 @@ def template_match(source_image_path: str, template_image_path: str, threshold: 
     cv2.imwrite(result_image_path, source_image)
     return matches
 
-def template_match_multiple(source_image_path: str, template_image_paths: List[str], threshold: float = 0.8, roi: Optional[Tuple[int, int, int, int]] = None, scaling_factor: float = 1.0) -> List[Tuple[int, int, int, int]]:
+def template_match_multiple(source_image_path: str, template_directory: str, threshold: float = 0.8, roi: Optional[Tuple[int, int, int, int]] = None, scaling_factor: float = 1.0) -> List[Tuple[int, int, int, int]]:
     """
-    Perform template matching for multiple template images on the source image and optionally shrink bounding boxes.
+    Perform template matching for multiple template images found in a specified directory on the source image.
     
     Parameters:
     - source_image_path: Path to the source image.
-    - template_image_paths: List of paths to template images.
+    - template_directory: Directory path containing template images (all .png files will be used).
     - threshold: Matching threshold.
     - roi: Region of interest as a tuple (x, y, width, height). If None, the whole image is used.
     - scaling_factor: Factor by which to shrink the bounding boxes (default is 1.0, meaning no shrinking).
@@ -161,7 +162,11 @@ def template_match_multiple(source_image_path: str, template_image_paths: List[s
     all_matches = []
     source_image = load_image(source_image_path)
     
+    # Find all .png files in the specified directory
+    template_image_paths = glob.glob(os.path.join(template_directory, '*.png'))
+    
     for template_image_path in template_image_paths:
+        print(template_image_path)
         verify_image_path(template_image_path)  # Check if each template path is valid
         template_image = load_image(template_image_path, preprocess=False)
         matches = template_match(source_image_path, template_image_path, threshold, roi)
@@ -227,7 +232,7 @@ def template_match_digits(source_image_path: str, template_image_paths: List[str
     Returns:
     - merged_boxes: List of merged bounding boxes after template matching.
     """
-    source_image = load_image(source_image_path, preprocess=False)
+    source_image = load_image(source_image_path, preprocess=True)
     if roi:
         x, y, w, h = roi
         source_image = source_image[y:y + h, x:x + w]

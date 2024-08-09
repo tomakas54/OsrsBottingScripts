@@ -80,6 +80,7 @@ class FishingBot:
 
         if not is_fishing:
             time.sleep(random.uniform(1.5, 2.5))
+            screenshot_path = window_utils.take_screenshot(self.hwnd)
             if image_recognition_utils.generate_random_b_box_coord(
                     image_recognition_utils.template_match(
                         screenshot_path, 
@@ -118,7 +119,7 @@ class FishingBot:
 
         self.hwnd = window_utils.findWindow_runelite(name)
         login(self.cursor, self.hwnd)
-        time_to_stop = break_utils.generate_botting_time(2)
+        time_to_stop = break_utils.generate_botting_time(min_time = 2)
 
         listener_thread = threading.Thread(target=self.key_listener)
         listener_thread.start()
