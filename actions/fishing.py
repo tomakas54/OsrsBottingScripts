@@ -14,7 +14,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from simpy.library import io
 from simpy.library.global_vals import *
 from actions.login import login
-from actions.camera import calibrate_camera
+from actions.camera import rotate_camera_till_color,calibrate_camera_rotation,calibrate_camera_zoom
 from utils import break_utils, window_utils, coordinates_utils, image_recognition_utils,hardware_inputs,constants
 from logout import logout
 
@@ -57,7 +57,6 @@ class FishingBot:
     def handle_fishing(self) -> None:
         screenshot, window_left, window_top, window_width, window_height,screenshot_path = window_utils.get_window_screenshot(self.hwnd)
         is_fishing = coordinates_utils.action_check(screenshot)
-        print('FISHING' if is_fishing else 'NOT FISHING')
 
         if not is_fishing:
             time.sleep(random.uniform(2.5, 3.5))
@@ -72,11 +71,13 @@ class FishingBot:
                 if random.random() < 0.5:
                     break_utils.take_a_break(5, 15)
                 self.handle_dropping()
-
             fish_spot_coords = tuple(coordinates_utils.find_color_coordinates(screenshot, constants.COLORS["pink"], roi=(0, 0, window_width, window_height)))
             fish_spot_coords = [tuple(coord) if isinstance(coord, np.ndarray) else coord for coord in fish_spot_coords]
             fish_spot_coords = sorted(fish_spot_coords, key=self.distance_from_center)[:50]
-            coordinates_utils.click_coordinates(self.cursor, coordinates_utils.pick_random_coordinate(fish_spot_coords,window_left,window_top))
+            if len(fish_spot_coords) > 0:
+                coordinates_utils.click_coordinates(self.cursor, coordinates_utils.pick_random_coordinate(fish_spot_coords,window_left,window_top))
+            else:
+                rotate_camera_till_color(constants.COLORS['pink'],self.hwnd)    
 
             if random.random() < 0.8:
                 hover_to = coordinates_utils.generate_random_absolute_coords(GetSystemMetrics(0), GetSystemMetrics(1))
@@ -104,12 +105,12 @@ class FishingBot:
 
         listener_thread = threading.Thread(target=self.key_listener)
         listener_thread.start()
-        '''calibrate_camera('west')'''
+        calibrate_camera_rotation('west')
+        calibrate_camera_zoom(20,'down')
         try:
             while time.time() < time_to_stop and not self.stop_event.is_set():
                 screenshot, _, _, _, _ , _= window_utils.get_window_screenshot(self.hwnd)
                 if coordinates_utils.xp_check(screenshot):
-                    print('XP FOUND')
                     self.last_xp_drop_time = time.time()
                 if time.time() - self.last_xp_drop_time > 360:
                     print("XP NOT FOUND FOR A WHILE STOPPING SCRIPT")

@@ -2,12 +2,15 @@ import ctypes
 from ctypes import wintypes
 import time
 import random
+
 user32 = ctypes.WinDLL('user32', use_last_error=True)
 
+# Constants for input types
 INPUT_MOUSE = 0
 INPUT_KEYBOARD = 1
 INPUT_HARDWARE = 2
 
+# Mouse event flags
 MOUSEEVENTF_MOVE = 0x0001
 MOUSEEVENTF_LEFTDOWN = 0x0002
 MOUSEEVENTF_LEFTUP = 0x0004
@@ -23,12 +26,15 @@ MOUSEEVENTF_MOVE_NOCOALESCE = 0x2000
 MOUSEEVENTF_VIRTUALDESK = 0x4000
 MOUSEEVENTF_ABSOLUTE = 0x8000
 
+# Keyboard event flags
 KEYEVENTF_EXTENDEDKEY = 0x0001
 KEYEVENTF_KEYUP = 0x0002
 KEYEVENTF_UNICODE = 0x0004
 
+# Map virtual key to scan code
 MAPVK_VK_TO_VSC = 0
 
+# Define key codes
 wintypes.ULONG_PTR = wintypes.WPARAM
 
 keyCodeMap = {
@@ -79,9 +85,7 @@ keyCodeMap = {
     'left_arrow'        : "0x25",
     'right_arrow'       : "0x27",
     'enter'             : "0x0D"
-
 }
-
 
 def toKeyCode(c: str) -> int:
     keyCode = keyCodeMap[c]
@@ -123,14 +127,16 @@ class INPUT(ctypes.Structure):
 
 LPINPUT = ctypes.POINTER(INPUT)
 
-def PressKey(hexKeyCode: int) -> None:
+def PressKey(button: str) -> None:
+    input_key = toKeyCode(button)
     x = INPUT(type=INPUT_KEYBOARD,
-              ki=KEYBDINPUT(wVk=hexKeyCode))
+              ki=KEYBDINPUT(wVk=input_key))
     user32.SendInput(1, ctypes.byref(x), ctypes.sizeof(x))
 
-def ReleaseKey(hexKeyCode: int) -> None:
+def ReleaseKey(button: str) -> None:
+    input_key = toKeyCode(button)
     x = INPUT(type=INPUT_KEYBOARD,
-              ki=KEYBDINPUT(wVk=hexKeyCode,
+              ki=KEYBDINPUT(wVk=input_key,
                             dwFlags=KEYEVENTF_KEYUP))
     user32.SendInput(1, ctypes.byref(x), ctypes.sizeof(x))
 
@@ -163,10 +169,9 @@ def ReleaseMouseButton(button: str) -> None:
     user32.SendInput(1, ctypes.byref(x), ctypes.sizeof(x))
 
 def PressButton(button: str) -> None:
-    input_key = toKeyCode(button)
-    PressKey(input_key)
+    PressKey(button)
     time.sleep(random.uniform(0.1, 0.5))
-    ReleaseKey(input_key)
+    ReleaseKey(button)
 
 def Click(button: str) -> None:
     PressMouseButton(button)
@@ -175,10 +180,9 @@ def Click(button: str) -> None:
     time.sleep(random.uniform(0.1, 0.2))
 
 def HoldButton(button: str, duration: float) -> None:
-    input_key = toKeyCode(button)
-    PressKey(input_key)
+    PressKey(button)
     time.sleep(duration)
-    ReleaseKey(input_key)
+    ReleaseKey(button)
 
 def Write(string: str) -> None:
     for char in string:
@@ -188,6 +192,30 @@ def Write(string: str) -> None:
             PressButton(char)
         time.sleep(random.uniform(0.05, 0.15))  # Small delay between key presses
 
-# Example usage:
-# Write("hello world")
+def ScrollMouse(amount: int, scroll_type: str, horizontal: bool = False,) -> None:
+    """
+    Scroll the mouse wheel.
+    
+    :param amount: The amount to scroll.
+    :param horizontal: If True, scroll horizontally. If False, scroll vertically.
+    """
+    # Set the mouseData to amount, positive or negative]
+    if scroll_type == 'up': 
+        mouseData = 120
+    if scroll_type == 'down':
+        mouseData = -120
+    else:
+        print('BAD SCROLL TYPE! USE "up" or "down"')
+        return
+    if horizontal:
+        dwFlags = MOUSEEVENTF_HWHEEL
+    else:
+        dwFlags = MOUSEEVENTF_WHEEL
+    for i in range(amount):
+        time.sleep(random.uniform(0.05,0.15))
+        x = INPUT(type=INPUT_MOUSE,
+                mi=MOUSEINPUT(dwFlags=dwFlags,
+                                mouseData=mouseData))
+        user32.SendInput(1, ctypes.byref(x), ctypes.sizeof(x))
+
 

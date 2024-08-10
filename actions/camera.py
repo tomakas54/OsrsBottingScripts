@@ -11,7 +11,7 @@ from simpy.library.global_vals import *
 from utils import window_utils, coordinates_utils, image_recognition_utils,hardware_inputs,constants
 
 
-def calibrate_camera(rotation = 'north'):
+def calibrate_camera_rotation(rotation = 'north'):
     cursor = SystemCursor()
     name = window_utils.get_account_name()
     hwnd = window_utils.findWindow_runelite(name)
@@ -38,6 +38,44 @@ def calibrate_camera(rotation = 'north'):
     hardware_inputs.Click('left')
     hardware_inputs.HoldButton('up_arrow', random.uniform(2,4))
 
+def calibrate_camera_zoom(ammount: int, scroll_type: int = 'up') -> None:
+    cursor = SystemCursor
+    roi = (*constants.RELATIVE_COORDS['bank'],*constants.ROI_SIZES['bank'])
+    cursor.move_to(coordinates_utils.generate_random_coord_in_roi(roi))
+    hardware_inputs.ScrollMouse(ammount,scroll_type)
+       
+        
+def rotate_camera_till_color(color, hwnd: int):
+    # Initial screenshot and color search
+    screenshot, _, _, _, _, _ = window_utils.get_window_screenshot(hwnd)
+    found_color = len(coordinates_utils.find_color_coordinates(screenshot, color)) > 0
+    rotate_type = None  # To store the last rotation direction
+    rotate_directions = ['right_arrow', 'left_arrow']
+    rotate_type = random.choice(rotate_directions)
+        
+    # Perform the rotation
+    hardware_inputs.PressKey(rotate_type) 
+    while not found_color:
+        # Randomly select a rotation direction
+        hardware_inputs.PressKey(rotate_type) 
+
+        # Capture a new screenshot and recheck for the color
+        screenshot, _, _, _, _, _ = window_utils.get_window_screenshot(hwnd)
+        found_color = len(coordinates_utils.find_color_coordinates(screenshot, color)) > 0
+
+        # Print the number of color coordinates found (for debugging)
+        print(len(coordinates_utils.find_color_coordinates(screenshot, color)))
+
+    # Optionally, stop the camera rotation after finding the color
+    if rotate_type is not None:
+        hardware_inputs.ReleaseKey(rotate_type) 
+
+    print("Color found, rotation stopped.")
+    hardware_inputs.ReleaseKey(rotate_type)
 
 if __name__ == "__main__":
-    calibrate_camera('east')
+
+    hwnd = window_utils.findWindow_runelite("GIMGrupiokas")
+    calibrate_camera_rotation()
+    calibrate_camera_zoom(15,'down')
+    rotate_camera_till_color(constants.COLORS['pink'],hwnd)
