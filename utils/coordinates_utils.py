@@ -1,6 +1,8 @@
 import numpy as np
 import random
+
 from utils.hardware_inputs import *
+from utils.constants import *
 
 def find_color_coordinates(image, target_colors, tolerance=20, roi=None):
     """
@@ -96,23 +98,24 @@ def generate_random_absolute_coords(abs_x : int, abs_y : int) -> tuple:
 
 
 def xp_check(screenshot) -> bool:
-    RELATIVE_COORDS = {
-        "xp_drop": (450, 76),
-    }
-    ROI_SIZES = {
-        "xp_drop": (60, 100),
-    }
-    COLORS = {
-        "xp_drop": [(255, 0, 0)]
-    }
     roi_xp_drop = (*RELATIVE_COORDS["xp_drop"], *ROI_SIZES["xp_drop"])
-    xp_coords = find_color_coordinates(screenshot, COLORS["xp_drop"], roi=roi_xp_drop)
+    xp_coords = find_color_coordinates(screenshot, COLORS["red"], roi=roi_xp_drop)
     if len(xp_coords) > 0:
         is_xp = True
     else:
         is_xp = False
     return is_xp
 
+def action_check(screenshot) -> bool:
+    roi_action = (*RELATIVE_COORDS["action"], *ROI_SIZES["action"])
+    xp_coords = find_color_coordinates(screenshot, COLORS["green"], roi=roi_action)
+    if len(xp_coords) > 0:
+        is_action = True
+    else:
+        is_action = False
+    return is_action
+
+    
 def generate_random_coord_in_roi(roi):
     """
     Generate a random coordinate within the specified ROI.

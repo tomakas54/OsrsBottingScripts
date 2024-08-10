@@ -1,44 +1,26 @@
 import time
 import random
-import threading
-import keyboard
 import sys
 import os
-import numpy as np
-from functools import lru_cache
 from humancursor import SystemCursor
-from win32api import GetSystemMetrics
 
 # Import local modules
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from simpy.library import io
 from simpy.library.global_vals import *
-from actions.login import login
-from utils import break_utils, window_utils, coordinates_utils, image_recognition_utils,hardware_inputs
-from logout import logout
+from utils import window_utils, coordinates_utils, image_recognition_utils,hardware_inputs,constants
 
-RELATIVE_COORDS = {
-    "compass": (596, 37),
-
-}
-ROI_SIZES = {
-    "compass": (25, 25),
-
-}
-COLORS = {
-
-}
 
 def calibrate_camera(rotation = 'north'):
     cursor = SystemCursor()
     name = window_utils.get_account_name()
     hwnd = window_utils.findWindow_runelite(name)
-    roi_compass = (*RELATIVE_COORDS["compass"], *ROI_SIZES["compass"])
+    roi_compass = (*constants.RELATIVE_COORDS["compass"], *constants.ROI_SIZES["compass"])
     compass_coords = coordinates_utils.generate_random_coord_in_roi(roi_compass)
     print(compass_coords)
     coordinates_utils.click_coordinates(cursor,compass_coords,'right')
     time.sleep(1)
-    screenshot_path = window_utils.take_screenshot(hwnd)
+    _,_,_,_,_,screenshot_path = window_utils.get_window_screenshot(hwnd)
     if rotation == 'west':
         template_path = 'assets/west.png'
     elif rotation == 'north':

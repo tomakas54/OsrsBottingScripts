@@ -15,27 +15,12 @@ from simpy.library import io
 from simpy.library.global_vals import *
 from actions.login import login
 from actions.camera import calibrate_camera
-from utils import break_utils, window_utils, coordinates_utils, image_recognition_utils,hardware_inputs
+from utils import break_utils, window_utils, coordinates_utils, image_recognition_utils,hardware_inputs,constants
 from logout import logout
 
 
 # Constants
-RELATIVE_COORDS = {
-    "inventory": (556, 240),
-    "fishing": (12, 45),
-    "xp_drop": (450, 76),
-}
-ROI_SIZES = {
-    "inventory": (180, 250),
-    "fishing": (140, 100),
-    "xp_drop": (60, 100),
-}
-COLORS = {
-    "is_fishing": [(0, 255, 0)],
-    "fish_spot": [(255, 0, 255)],
-    "bank_items": [(0, 0, 255)],
-    "xp_drop": [(255, 0, 0)]
-}
+
 class FishingBot:
     def __init__(self):
         self.script_failed = False
@@ -52,8 +37,8 @@ class FishingBot:
         return ((y - 380)**2 + (x - 280)**2)**0.5
 
     def handle_dropping(self) -> None:
-        screenshot_path = window_utils.take_screenshot(self.hwnd)
-        roi_inventory = (*RELATIVE_COORDS["inventory"], *ROI_SIZES["inventory"])
+        _,_,_,_,_,screenshot_path = window_utils.get_window_screenshot(self.hwnd)
+        roi_inventory = (*constants.RELATIVE_COORDS["inventory"], *constants.ROI_SIZES["inventory"])
         fish_coords = image_recognition_utils.generate_random_b_box_coord(
             image_recognition_utils.template_match_multiple(
                 screenshot_path,
@@ -70,17 +55,13 @@ class FishingBot:
                 hardware_inputs.Click('left')
 
     def handle_fishing(self) -> None:
-        screenshot, window_left, window_top, window_width, window_height = window_utils.get_window_screenshot(self.hwnd)
-        screenshot_path = window_utils.take_screenshot(self.hwnd)
-        roi_fishing = (*RELATIVE_COORDS["fishing"], *ROI_SIZES["fishing"])
-        
-        is_fishing_coords = coordinates_utils.find_color_coordinates(screenshot, COLORS["is_fishing"], roi=roi_fishing)
-        is_fishing = len(is_fishing_coords) > 0
-        #print('FISHING' if is_fishing else 'NOT FISHING')
+        screenshot, window_left, window_top, window_width, window_height,screenshot_path = window_utils.get_window_screenshot(self.hwnd)
+        is_fishing = coordinates_utils.action_check(screenshot)
+        print('FISHING' if is_fishing else 'NOT FISHING')
 
         if not is_fishing:
-            time.sleep(random.uniform(1.5, 2.5))
-            screenshot_path = window_utils.take_screenshot(self.hwnd)
+            time.sleep(random.uniform(2.5, 3.5))
+            _,_,_,_,_,screenshot_path = window_utils.get_window_screenshot(self.hwnd)
             if image_recognition_utils.generate_random_b_box_coord(
                     image_recognition_utils.template_match(
                         screenshot_path, 
@@ -92,7 +73,7 @@ class FishingBot:
                     break_utils.take_a_break(5, 15)
                 self.handle_dropping()
 
-            fish_spot_coords = tuple(coordinates_utils.find_color_coordinates(screenshot, COLORS["fish_spot"], roi=(0, 0, window_width, window_height)))
+            fish_spot_coords = tuple(coordinates_utils.find_color_coordinates(screenshot, constants.COLORS["pink"], roi=(0, 0, window_width, window_height)))
             fish_spot_coords = [tuple(coord) if isinstance(coord, np.ndarray) else coord for coord in fish_spot_coords]
             fish_spot_coords = sorted(fish_spot_coords, key=self.distance_from_center)[:50]
             coordinates_utils.click_coordinates(self.cursor, coordinates_utils.pick_random_coordinate(fish_spot_coords,window_left,window_top))
@@ -126,7 +107,7 @@ class FishingBot:
         '''calibrate_camera('west')'''
         try:
             while time.time() < time_to_stop and not self.stop_event.is_set():
-                screenshot, _, _, _, _ = window_utils.get_window_screenshot(self.hwnd)
+                screenshot, _, _, _, _ , _= window_utils.get_window_screenshot(self.hwnd)
                 if coordinates_utils.xp_check(screenshot):
                     print('XP FOUND')
                     self.last_xp_drop_time = time.time()

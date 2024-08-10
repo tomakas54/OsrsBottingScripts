@@ -145,7 +145,60 @@ def template_match(source_image_path: str, template_image_path: str, threshold: 
     cv2.imwrite(result_image_path, source_image)
     return matches
 
-def template_match_multiple(source_image_path: str, template_directory: str, threshold: float = 0.8, roi: Optional[Tuple[int, int, int, int]] = None, scaling_factor: float = 1.0) -> List[Tuple[int, int, int, int]]:
+def template_match_multiple(source_image_path: str, template_image_paths: List[str], threshold: float = 0.8, roi: Optional[Tuple[int, int, int, int]] = None, scaling_factor: float = 1.0) -> List[Tuple[int, int, int, int]]:
+    """
+    Perform template matching on the source image to find occurrences of multiple template images.
+    
+    Parameters:
+    - source_image_path: Path to the source image.
+    - template_image_paths: List of paths to the template images.
+    - threshold: Matching threshold.
+    - roi: Region of interest as a tuple (x, y, width, height). If None, the whole image is used.
+    - scaling_factor: Scaling factor to shrink the boxes.
+    
+    Returns:
+    - matches: List of coordinates of matched regions as (x1, y1, x2, y2).
+    """
+    source_image = load_image(source_image_path)
+    source_gray = cv2.cvtColor(source_image, cv2.COLOR_BGR2GRAY)
+
+    if roi:
+        x, y, w, h = roi
+        source_gray = source_gray[y:y + h, x:x + w]
+        source_image = source_image[y:y + h, x:x + w]
+
+    all_matches = []
+    
+    for template_image_path in template_image_paths:
+        template_image = load_image(template_image_path)
+        template_gray = cv2.cvtColor(template_image, cv2.COLOR_BGR2GRAY)
+        template_w, template_h = template_gray.shape[::-1]
+
+        res = cv2.matchTemplate(source_gray, template_gray, cv2.TM_CCOEFF_NORMED)
+        loc = np.where(res >= threshold)
+
+        matches = []
+        for pt in zip(*loc[::-1]):
+            if roi:
+                pt = (pt[0] + roi[0], pt[1] + roi[1])
+            x1, y1, x2, y2 = pt[0], pt[1], pt[0] + template_w, pt[1] + template_h
+            matches.append((x1, y1, x2, y2))
+        
+        if scaling_factor < 1.0:
+            matches = shrink_boxes(matches, scaling_factor)
+        
+        all_matches.extend(matches)
+    
+    # Draw rectangles on the source image
+    for (x1, y1, x2, y2) in all_matches:
+        cv2.rectangle(source_image, (x1, y1), (x2, y2), (0, 255, 0), 1)
+    
+    result_image_path = 'result.png'
+    cv2.imwrite(result_image_path, source_image)
+    
+    return all_matches
+
+def template_match_multiple_folder(source_image_path: str, template_directory: str, threshold: float = 0.8, roi: Optional[Tuple[int, int, int, int]] = None, scaling_factor: float = 1.0) -> List[Tuple[int, int, int, int]]:
     """
     Perform template matching for multiple template images found in a specified directory on the source image.
     

@@ -18,22 +18,10 @@ from utils.break_utils import *
 from utils.window_utils import *
 from utils.coordinates_utils import *
 from utils.image_recognition_utils import *
+from utils.constants import *
 
 pyautogui.FAILSAFE = False
 # Define coordinates, sizes, and colors
-relative_coords = {
-    "inventory": (556, 240),
-    "xp_drop": (450,76),
-}
-roi_sizes = {
-    "inventory": (200, 250),
-    "xp_drop": (60, 100),
-}
-
-colors = {
-    "bank": [(255, 0, 255)],
-    "xp_drop": [(255, 0, 0)]
-}
 template_image_paths = [f'assets/{i}.png' for i in range(1, 10)]
 script_failed = False  # Initialize the script_failed variable
 stop_event = threading.Event()  # Create a stop event for stopping the script
@@ -47,16 +35,16 @@ def alch(cursor, alch_path, alch_item_path):
     """Finish crafting and interact with the bank."""
     global script_failed
     global alch_count
-    screenshot_path = take_screenshot(hwnd)
-    roi_inventory = (*relative_coords["inventory"], *roi_sizes["inventory"])
-    alch_coords = template_match(screenshot_path, alch_path, threshold=0.8, roi=roi_inventory, scale_factor=0.5)
+    _, _, _, _, _,screenshot_path = get_window_screenshot(hwnd)  
+    roi_inventory = (*RELATIVE_COORDS["inventory"], *ROI_SIZES["inventory"])
+    alch_coords = template_match(screenshot_path, alch_path, threshold=0.8, roi=roi_inventory, scaling_factor=0.5)
     if len(alch_coords) == 0:
         print("No alchemy coordinates found.")
         return
     click_coordinates(cursor, alch_coords[0])
     time.sleep(random.uniform(0.25, 0.5))
-    screenshot_path = take_screenshot(hwnd)
-    alch_item_coords = template_match(screenshot_path, alch_item_path, threshold=0.8, roi=roi_inventory, scale_factor=0.5)
+    _, _, _, _, _,screenshot_path = get_window_screenshot(hwnd)  
+    alch_item_coords = template_match(screenshot_path, alch_item_path, threshold=0.8, roi=roi_inventory, scaling_factor=0.5)
     if len(alch_item_coords) == 0:
         print("No alchemy item coordinates found.")
         return
@@ -68,16 +56,16 @@ def stun(cursor, stun_path):
     global script_failed
     global stun_count
     time.sleep(random.uniform(0.1, 0.2))
-    screenshot_path = take_screenshot(hwnd)
-    roi_inventory = (*relative_coords["inventory"], *roi_sizes["inventory"])
-    stun_coords = template_match(screenshot_path, stun_path, threshold=0.8, roi=roi_inventory, scale_factor=0.5)
+    _, _, _, _, _,screenshot_path = get_window_screenshot(hwnd)  
+    roi_inventory = (*RELATIVE_COORDS["inventory"], *ROI_SIZES["inventory"])
+    stun_coords = template_match(screenshot_path, stun_path, threshold=0.8, roi=roi_inventory, scaling_factor=0.5)
     if len(stun_coords) == 0:
         print("No stun coordinates found.")
         return
     click_coordinates(cursor, stun_coords[0])
     time.sleep(random.uniform(0.25, 0.5))
     screenshot, window_left, window_top, window_width, window_height = get_window_screenshot(hwnd)
-    npc_coords = find_color_coordinates(screenshot, colors["bank"], roi=(0, 0, window_width, window_height))
+    npc_coords = find_color_coordinates(screenshot, COLORS["pink"], roi=(0, 0, window_width, window_height))
     if len(npc_coords) == 0:
         print("No NPC coordinates found.")
         return
@@ -106,7 +94,6 @@ def stun_alch(stun_path, level_up_path,alch_path,alch_item_path):
     
     cursor = SystemCursor()
     login(cursor, hwnd)
-    action_done = False
     last_xp_drop_time = time.time()
     time_to_stop = generate_botting_time(2)
     time.sleep(random.uniform(10, 20))
@@ -117,13 +104,12 @@ def stun_alch(stun_path, level_up_path,alch_path,alch_item_path):
         listener_thread.start()
 
         while time.time() < time_to_stop and not stop_event.is_set():
-            screenshot, window_left, window_top, window_width, window_height = get_window_screenshot(hwnd)
-            screenshot_path = take_screenshot(hwnd)        
+            screenshot, _, _, _, _,screenshot_path = get_window_screenshot(hwnd)     
 
-            roi_xp_drop = (*relative_coords["xp_drop"], *roi_sizes["xp_drop"])
+            roi_xp_drop = (*RELATIVE_COORDS["xp_drop"], *RELATIVE_COORDS["xp_drop"])
 
-            xp_coords = find_color_coordinates(screenshot, colors["xp_drop"], roi=roi_xp_drop)
-            level_up_coords = template_match(screenshot_path, level_up_path, threshold=0.8, scale_factor = 0.5)
+            xp_coords = find_color_coordinates(screenshot, COLORS["red"], roi=roi_xp_drop)
+            level_up_coords = template_match(screenshot_path, level_up_path, threshold=0.8, scaling_factor = 0.5)
 
             if xp_coords.size > 0:
                 #print('XP FOUND')

@@ -5,23 +5,14 @@ import os
 from humancursor import SystemCursor
 # Import local modules
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from utils import window_utils, coordinates_utils, image_recognition_utils,hardware_inputs
+from utils import window_utils, coordinates_utils, image_recognition_utils,hardware_inputs,constants
 from simpy.library import io
 from simpy.library.global_vals import *
-COLORS = {
-    "bank": [(255, 0, 255)],
-}
-RELATIVE_COORDS = {
-    "bank": (72, 100),
-}
-ROI_SIZES = {
-    "bank": (390, 250),
-}
 
 pin_entered = False
 def enter_pin(hwnd : int) -> None:
     global pin_entered
-    screenshot_path = window_utils.take_screenshot(hwnd)
+    _,_,_,_,_,screenshot_path = window_utils.get_window_screenshot(hwnd)
     pin_matches = image_recognition_utils.template_match(
         screenshot_path,
         'assets/bank_pin_flag.png',
@@ -43,7 +34,7 @@ def enter_pin(hwnd : int) -> None:
 def set_quantity(hwnd : int,quantity : int,cursor) -> None:
     open_bank(hwnd,cursor)
     if is_in_bank(hwnd):
-        screenshot_path = window_utils.take_screenshot(hwnd)
+        _,_,_,_,_,screenshot_path = window_utils.get_window_screenshot(hwnd)
         custom_quantity = False
         if quantity == 1:
             print('PICKED 1')
@@ -97,7 +88,7 @@ def set_quantity(hwnd : int,quantity : int,cursor) -> None:
         else:
             coordinates_utils.click_coordinates(cursor,quantity_coords[0],'right')
             time.sleep(random.uniform(0.4,0.6))
-            screenshot_path = window_utils.take_screenshot(hwnd)
+            _,_,_,_,_,screenshot_path = window_utils.get_window_screenshot(hwnd)
             custom_quantity_coords = image_recognition_utils.generate_random_b_box_coord(
                 image_recognition_utils.template_match(
                 screenshot_path,
@@ -108,12 +99,12 @@ def set_quantity(hwnd : int,quantity : int,cursor) -> None:
             time.sleep(random.uniform(0.25,0.5))
             io.wind_mouse(custom_quantity_coords[0][0], custom_quantity_coords[0][1], speed=0.2)
             hardware_inputs.Click('left')
-            time.sleep(random.uniform(0.25,0.5))
+            time.sleep(random.uniform(0.5,1))
             hardware_inputs.Write(str(quantity))
             hardware_inputs.PressButton('enter')
 
 def is_in_bank(hwnd : int) -> bool:
-    screenshot_path = window_utils.take_screenshot(hwnd) 
+    _,_,_,_,_,screenshot_path = window_utils.get_window_screenshot(hwnd)
     bank_item_coords = image_recognition_utils.generate_random_b_box_coord(
         image_recognition_utils.template_match(
             screenshot_path,
@@ -128,8 +119,8 @@ def is_in_bank(hwnd : int) -> bool:
         return False
     
 def open_bank(hwnd : int, cursor : SystemCursor) -> None:
-    screenshot, window_left, window_top, window_width, window_height = window_utils.get_window_screenshot(hwnd)
-    bank_coords = coordinates_utils.find_color_coordinates(screenshot, COLORS["bank"], roi=(0, 0, window_width, window_height))
+    screenshot, window_left, window_top, window_width, window_height, _ = window_utils.get_window_screenshot(hwnd)
+    bank_coords = coordinates_utils.find_color_coordinates(screenshot, constants.COLORS["pink"], roi=(0, 0, window_width, window_height))
     if len(bank_coords) > 0:
         coordinates_utils.click_coordinates(
             cursor,
@@ -149,7 +140,7 @@ def bank_inventory(hwnd : int, cursor : SystemCursor) -> None:
             open_bank(hwnd,cursor)
             if not pin_entered:
                 enter_pin(hwnd)
-            screenshot_path = window_utils.take_screenshot(hwnd)
+            _,_,_,_,_,screenshot_path = window_utils.get_window_screenshot(hwnd)
             bank_item_coords = image_recognition_utils.generate_random_b_box_coord(
                 image_recognition_utils.template_match(
                     screenshot_path,
@@ -166,8 +157,8 @@ def bank_inventory(hwnd : int, cursor : SystemCursor) -> None:
 def take_item(hwnd,cursor,template_path) -> bool:
     if is_in_bank(hwnd):
         no_item = True
-        bank_roi = (*RELATIVE_COORDS['bank'],*ROI_SIZES['bank'])
-        screenshot_path = window_utils.take_screenshot(hwnd) 
+        bank_roi = (*constants.RELATIVE_COORDS['bank'],*constants.ROI_SIZES['bank'])
+        _,_,_,_,_,screenshot_path = window_utils.get_window_screenshot(hwnd)
         item_coords = image_recognition_utils.generate_random_b_box_coord(
             image_recognition_utils.template_match(
                 screenshot_path,
@@ -178,7 +169,7 @@ def take_item(hwnd,cursor,template_path) -> bool:
             ))
         coordinates_utils.click_coordinates(cursor,item_coords[0])
         time.sleep(random.uniform(0.5,0.7))
-        screenshot_path = window_utils.take_screenshot(hwnd)
+        _,_,_,_,_,screenshot_path = window_utils.get_window_screenshot(hwnd)
         no_items_matches = image_recognition_utils.template_match(
                 screenshot_path,
                 'assets/choose.png',

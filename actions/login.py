@@ -35,7 +35,7 @@ def get_account_info(filename='account_data.txt') -> tuple:
         return None, None
     
 def login(cursor, hwnd: int) -> None:
-    screenshot_path = take_screenshot(hwnd)
+    _,_,_,_,_,screenshot_path = get_window_screenshot(hwnd)
     print(f"Screenshot saved to: {screenshot_path}")
     
     source_image_path = screenshot_path  # Use the screenshot as the source image
@@ -70,7 +70,7 @@ def login(cursor, hwnd: int) -> None:
         PressButton('tab')
         pyautogui.write(password, interval=random.uniform(0.1, 0.2))
 
-        screenshot_path = take_screenshot(hwnd)  
+        _,_,_,_,_,screenshot_path = get_window_screenshot(hwnd) 
         template_image_path = 'assets/login.png'  # Path to the template image
         random_coordinates = generate_random_b_box_coord(template_match(source_image_path, template_image_path, threshold=0.8))
         
