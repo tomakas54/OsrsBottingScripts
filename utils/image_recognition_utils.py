@@ -1,11 +1,14 @@
 import cv2
 import numpy as np
 import random
-import sys
 import os
 import glob
+from rich.console import Console
+from rich.traceback import install
 from typing import List, Tuple, Optional
 
+console = Console()
+install()
 # Add a helper function to verify if the path exists
 def verify_image_path(image_path: str) -> None:
     if not isinstance(image_path, str):
@@ -219,7 +222,7 @@ def template_match_multiple_folder(source_image_path: str, template_directory: s
     template_image_paths = glob.glob(os.path.join(template_directory, '*.png'))
     
     for template_image_path in template_image_paths:
-        print(template_image_path)
+        console.log(template_image_path)
         verify_image_path(template_image_path)  # Check if each template path is valid
         template_image = load_image(template_image_path, preprocess=False)
         matches = template_match(source_image_path, template_image_path, threshold, roi)

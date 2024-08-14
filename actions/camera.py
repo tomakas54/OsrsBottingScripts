@@ -3,13 +3,15 @@ import random
 import sys
 import os
 from humancursor import SystemCursor
-
+from rich.console import Console
+from rich.traceback import install
 # Import local modules
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from simpy.library import io
 from simpy.library.global_vals import *
 from utils import window_utils, coordinates_utils, image_recognition_utils,hardware_inputs,constants
-
+console = Console()
+install()
 
 def calibrate_camera_rotation(rotation = 'north'):
     cursor = SystemCursor()
@@ -17,7 +19,7 @@ def calibrate_camera_rotation(rotation = 'north'):
     hwnd = window_utils.findWindow_runelite(name)
     roi_compass = (*constants.RELATIVE_COORDS["compass"], *constants.ROI_SIZES["compass"])
     compass_coords = coordinates_utils.generate_random_coord_in_roi(roi_compass)
-    print(compass_coords)
+    console.log(compass_coords)
     coordinates_utils.click_coordinates(cursor,compass_coords,'right')
     time.sleep(1)
     _,_,_,_,_,screenshot_path = window_utils.get_window_screenshot(hwnd)
@@ -30,10 +32,10 @@ def calibrate_camera_rotation(rotation = 'north'):
     elif rotation == 'south':
         template_path = 'assets/south.png'
     else:
-        print('Input rotation as north,west,east,south!')
+        console.log('Input rotation as north,west,east,south!')
         return
     rotation_coord = image_recognition_utils.generate_random_b_box_coord(image_recognition_utils.template_match(screenshot_path,template_path))
-    print(rotation_coord)
+    console.log(rotation_coord)
     io.wind_mouse(rotation_coord[0][0], rotation_coord[0][1], speed=0.2)
     hardware_inputs.Click('left')
     hardware_inputs.HoldButton('up_arrow', random.uniform(2,4))
@@ -63,14 +65,14 @@ def rotate_camera_till_color(color, hwnd: int):
         screenshot, _, _, _, _, _ = window_utils.get_window_screenshot(hwnd)
         found_color = len(coordinates_utils.find_color_coordinates(screenshot, color)) > 0
 
-        # Print the number of color coordinates found (for debugging)
-        print(len(coordinates_utils.find_color_coordinates(screenshot, color)))
+        # console.log the number of color coordinates found (for debugging)
+        console.log(len(coordinates_utils.find_color_coordinates(screenshot, color)))
 
     # Optionally, stop the camera rotation after finding the color
     if rotate_type is not None:
         hardware_inputs.ReleaseKey(rotate_type) 
 
-    print("Color found, rotation stopped.")
+    console.log("Color found, rotation stopped.")
     hardware_inputs.ReleaseKey(rotate_type)
 
 if __name__ == "__main__":

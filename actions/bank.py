@@ -3,13 +3,19 @@ import random
 import sys
 import os
 from humancursor import SystemCursor
+from rich.console import Console
+from rich.traceback import install
 # Import local modules
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utils import window_utils, coordinates_utils, image_recognition_utils,hardware_inputs,constants
 from simpy.library import io
 from simpy.library.global_vals import *
 
+install()
 pin_entered = False
+console = Console()
+
+
 def enter_pin(hwnd : int) -> None:
     global pin_entered
     _,_,_,_,_,screenshot_path = window_utils.get_window_screenshot(hwnd)
@@ -28,7 +34,7 @@ def enter_pin(hwnd : int) -> None:
         return 
     else:
         pin_entered = True
-        print('NO PIN NEEDED')
+        console.log('NO PIN NEEDED')
         return
 
 def set_quantity(hwnd : int,quantity : int,cursor) -> None:
@@ -37,7 +43,7 @@ def set_quantity(hwnd : int,quantity : int,cursor) -> None:
         _,_,_,_,_,screenshot_path = window_utils.get_window_screenshot(hwnd)
         custom_quantity = False
         if quantity == 1:
-            print('PICKED 1')
+            console.log('PICKED 1')
             quantity_coords = image_recognition_utils.generate_random_b_box_coord(
                 image_recognition_utils.template_match(
                 screenshot_path,
@@ -46,7 +52,7 @@ def set_quantity(hwnd : int,quantity : int,cursor) -> None:
                 scaling_factor=0.8
             ))
         elif quantity == 5:
-            print('PICKED 5')
+            console.log('PICKED 5')
             quantity_coords = image_recognition_utils.generate_random_b_box_coord(
                 image_recognition_utils.template_match(
                 screenshot_path,
@@ -55,7 +61,7 @@ def set_quantity(hwnd : int,quantity : int,cursor) -> None:
                 scaling_factor=0.8
             ))
         elif quantity == 10:
-            print('PICKED 10')
+            console.log('PICKED 10')
             quantity_coords = image_recognition_utils.generate_random_b_box_coord(
                 image_recognition_utils.template_match(
                 screenshot_path,
@@ -64,7 +70,7 @@ def set_quantity(hwnd : int,quantity : int,cursor) -> None:
                 scaling_factor=0.8
             ))
         elif quantity >= 28:
-            print('PICKED ALL')
+            console.log('PICKED ALL')
             quantity_coords = image_recognition_utils.generate_random_b_box_coord(
                 image_recognition_utils.template_match(
                 screenshot_path,
@@ -73,7 +79,7 @@ def set_quantity(hwnd : int,quantity : int,cursor) -> None:
                 scaling_factor=0.8
             ))
         else:
-            print('PICKED X')
+            console.log('PICKED X')
             quantity_coords = image_recognition_utils.generate_random_b_box_coord(
                 image_recognition_utils.template_match(
                 screenshot_path,
@@ -113,7 +119,7 @@ def is_in_bank(hwnd : int) -> bool:
             scaling_factor=0.5
         ))
     if len(bank_item_coords) > 0:
-        print('IN BANK')
+        console.log('IN BANK')
         return True
     else:
         return False
@@ -131,7 +137,7 @@ def open_bank(hwnd : int, cursor : SystemCursor) -> None:
             ))
         time.sleep(random.uniform(0.6, 0.7))        
     else:
-        print('NO BANK FOUND')
+        console.log('NO BANK FOUND')
         return
 
 def bank_inventory(hwnd : int, cursor : SystemCursor) -> None:
@@ -178,13 +184,13 @@ def take_item(hwnd,cursor,template_path) -> bool:
                 scaling_factor=0.8
             )
         if len(no_items_matches) > 0:
-            print('ZERO ITEM QUANTITY')
+            console.log('ZERO ITEM QUANTITY')
             no_item = True
             return no_item
         else:
             return False
     else:
-        print('NOT IN BANK')
+        console.log('NOT IN BANK')
         return True
      
 

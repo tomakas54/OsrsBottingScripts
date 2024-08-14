@@ -1,9 +1,9 @@
 import numpy as np
 import random
-
+from rich.traceback import install
 from utils.hardware_inputs import *
 from utils.constants import *
-
+install()
 def find_color_coordinates(image, target_colors, tolerance=20, roi=None):
     """
     Find coordinates of specified colors in the image.

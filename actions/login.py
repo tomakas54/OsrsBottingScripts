@@ -3,13 +3,15 @@ import os
 import pyautogui
 import time
 import random
-
+from rich.console import Console
+from rich.traceback import install
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from utils.image_recognition_utils import *
 from utils.coordinates_utils import *
 from utils.window_utils import *
-
+console = Console()
+install()
 
 def get_account_info(filename='account_data.txt') -> tuple:
     """
@@ -28,23 +30,23 @@ def get_account_info(filename='account_data.txt') -> tuple:
             password = lines[2].strip()
         return email, password
     except FileNotFoundError:
-        print(f"Error: {filename} not found.")
+        console.log(f"Error: {filename} not found.")
         return None, None
     except Exception as e:
-        print(f"An error occurred while reading {filename}: {e}")
+        console.log(f"An error occurred while reading {filename}: {e}")
         return None, None
     
 def login(cursor, hwnd: int) -> None:
     _,_,_,_,_,screenshot_path = get_window_screenshot(hwnd)
-    print(f"Screenshot saved to: {screenshot_path}")
+    console.log(f"Screenshot saved to: {screenshot_path}")
     
     source_image_path = screenshot_path  # Use the screenshot as the source image
     template_image_path = 'assets/existing_user.png'  # Path to the template image
-    print(f"Source image path: {source_image_path}")
-    print(f"Template image path: {template_image_path}")
+    console.log(f"Source image path: {source_image_path}")
+    console.log(f"Template image path: {template_image_path}")
 
     random_coordinates = generate_random_b_box_coord(template_match(source_image_path, template_image_path, threshold=0.8))
-    print(f"Random coordinates: {random_coordinates}")
+    console.log(f"Random coordinates: {random_coordinates}")
 
     if random_coordinates:
         # Get window position
@@ -53,7 +55,7 @@ def login(cursor, hwnd: int) -> None:
 
         # Convert relative coordinates to absolute coordinates
         absolute_coordinates = [(x + window_left, y + window_top) for x, y in random_coordinates]
-        print(f"Absolute coordinates: {absolute_coordinates}")
+        console.log(f"Absolute coordinates: {absolute_coordinates}")
 
         # Click on the first absolute coordinate
         cursor.click_on(absolute_coordinates[0])
@@ -61,7 +63,7 @@ def login(cursor, hwnd: int) -> None:
         # Read account info from file
         email, password = get_account_info()
         if email is None or password is None:
-            print("Failed to retrieve account info. Exiting...")
+            console.log("Failed to retrieve account info. Exiting...")
             return
 
         # Enter email and password
@@ -76,7 +78,7 @@ def login(cursor, hwnd: int) -> None:
         
         if random_coordinates:
             absolute_coordinates = [(x + window_left, y + window_top) for x, y in random_coordinates]
-            print(f"Absolute coordinates: {absolute_coordinates}")
+            console.log(f"Absolute coordinates: {absolute_coordinates}")
 
             # Click on the first absolute coordinate
             cursor.click_on(absolute_coordinates[0])
@@ -84,6 +86,6 @@ def login(cursor, hwnd: int) -> None:
             time.sleep(random.uniform(10, 20))
             PressButton('esc')
     else:
-        print("No matches found.")
+        console.log("No matches found.")
         
 

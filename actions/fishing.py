@@ -8,7 +8,8 @@ import numpy as np
 from functools import lru_cache
 from humancursor import SystemCursor
 from win32api import GetSystemMetrics
-
+from rich.console import Console
+from rich.traceback import install
 # Import local modules
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from simpy.library import io
@@ -18,6 +19,8 @@ from actions.camera import rotate_camera_till_color,calibrate_camera_rotation,ca
 from utils import break_utils, window_utils, coordinates_utils, image_recognition_utils,hardware_inputs,constants
 from logout import logout
 
+console = Console()
+install()
 
 # Constants
 
@@ -28,6 +31,8 @@ class FishingBot:
         self.cursor = SystemCursor()
         self.hwnd = None
         self.last_xp_drop_time = time.time()
+        self.xp_check_thread = None
+        self.xp_check_stop_event = threading.Event()
 
     @staticmethod
     @lru_cache(maxsize=None)
@@ -60,14 +65,14 @@ class FishingBot:
 
         if not is_fishing:
             time.sleep(random.uniform(2.5, 3.5))
-            _,_,_,_,_,screenshot_path = window_utils.get_window_screenshot(self.hwnd)
+            screenshot,_,_,_,_,screenshot_path = window_utils.get_window_screenshot(self.hwnd)
             if image_recognition_utils.generate_random_b_box_coord(
                     image_recognition_utils.template_match(
                         screenshot_path, 
                         'assets/full_inv_fish.png', 
                         threshold=0.8)
                 ):
-                print('FULL INV')
+                console.log('FULL INV')
                 if random.random() < 0.5:
                     break_utils.take_a_break(5, 15)
                 self.handle_dropping()
@@ -81,7 +86,7 @@ class FishingBot:
 
             if random.random() < 0.8:
                 hover_to = coordinates_utils.generate_random_absolute_coords(GetSystemMetrics(0), GetSystemMetrics(1))
-                print("HOVERING TO A RANDOM SCREEN COORDS")
+                console.log("HOVERING TO A RANDOM SCREEN COORDS")
                 self.cursor.move_to(hover_to)
             
             time.sleep(random.uniform(10, 12))
@@ -89,12 +94,20 @@ class FishingBot:
     def key_listener(self) -> None:
         keyboard.wait('q')
         self.stop_event.set()
-        print("Stop event set! Exiting...")
+        console.log("Stop event set! Exiting...")
+
+    def xp_check_loop(self):
+        while not self.xp_check_stop_event.is_set():
+            screenshot, _, _, _, _, _ = window_utils.get_window_screenshot(self.hwnd)
+            if coordinates_utils.xp_check(screenshot):
+                self.last_xp_drop_time = time.time()
+            time.sleep(1)  # Check every second
+
 
     def fish(self) -> bool:
         name = window_utils.get_account_name()
         if not name:
-            print("Failed to retrieve account name. Exiting...")
+            console.log("Failed to retrieve account name. Exiting...")
             self.script_failed = True
             window_utils.update_status_file(True)
             return self.script_failed
@@ -105,15 +118,16 @@ class FishingBot:
 
         listener_thread = threading.Thread(target=self.key_listener)
         listener_thread.start()
+
+        self.xp_check_thread = threading.Thread(target=self.xp_check_loop)
+        self.xp_check_thread.start()
         calibrate_camera_rotation('west')
         calibrate_camera_zoom(20,'down')
         try:
             while time.time() < time_to_stop and not self.stop_event.is_set():
-                screenshot, _, _, _, _ , _= window_utils.get_window_screenshot(self.hwnd)
-                if coordinates_utils.xp_check(screenshot):
-                    self.last_xp_drop_time = time.time()
+                _, _, _, _, _ , _= window_utils.get_window_screenshot(self.hwnd)
                 if time.time() - self.last_xp_drop_time > 360:
-                    print("XP NOT FOUND FOR A WHILE STOPPING SCRIPT")
+                    console.log("XP NOT FOUND FOR A WHILE STOPPING SCRIPT")
                     self.script_failed = True
                     window_utils.update_status_file(True)
                     break
@@ -121,7 +135,7 @@ class FishingBot:
                 time.sleep(0.5)
 
         except Exception as e:
-            print(f"An error occurred: {e}")
+            console.log(f"An error occurred: {e}")
             self.script_failed = True
         finally:
             logout(self.cursor,self.hwnd)

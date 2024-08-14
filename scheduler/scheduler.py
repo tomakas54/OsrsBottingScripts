@@ -3,7 +3,8 @@ import os
 import sys
 from typing import Callable, Optional
 from datetime import datetime
-
+from rich.console import Console
+from rich.traceback import install
 # Add necessary directories to sys.path
 sys.path.extend([
     os.path.abspath(os.path.join(os.path.dirname(__file__), '..')),
@@ -13,6 +14,8 @@ sys.path.extend([
 from utils.break_utils import generate_botting_time
 from actions.fishing import FishingBot  # Import the FishingBot class
 from actions.craft1414 import Craft1414Bot
+console = Console()
+install()
 
 class BotScheduler:
     def __init__(self, bot_class, method_name: str, bot_args: tuple = (), bot_kwargs: dict = {}, status_file: str = 'script_status.txt'):
@@ -35,26 +38,26 @@ class BotScheduler:
             bot_method = getattr(bot_instance, self.method_name)
             bot_method()
         except Exception as e:
-            print(f"An error occurred: {e}")
+            console.log(f"An error occurred: {e}")
             self.script_failed = True
 
     def sleep_until_next_run(self, hours: int) -> None:
-        next_start_time = generate_botting_time(min_time = 1,max_time=4)
+        next_start_time = generate_botting_time(min_time = 1,max_time=hours)
         sleep_duration = max(0, next_start_time - time.time())
         
         if sleep_duration > 0:
-            print(f"Scheduler sleeping until {datetime.fromtimestamp(next_start_time)}")
-            print(f"Sleep duration: {sleep_duration / 60:.2f} minutes")
+            console.log(f"Scheduler sleeping until {datetime.fromtimestamp(next_start_time)}")
+            console.log(f"Sleep duration: {sleep_duration / 60:.2f} minutes")
             time.sleep(sleep_duration)
         else:
-            print("Generated start time is in the past. Starting immediately.")
+            console.log("Generated start time is in the past. Starting immediately.")
 
     def run(self) -> None:
         while not self.script_failed:
             self.run_bot_script()
             
             if self.get_script_status() == 'failed':
-                print("Script failed. Stopping the scheduler.")
+                console.log("Script failed. Stopping the scheduler.")
                 break
             
             self.sleep_until_next_run(1)  # Sleep for at least 1 hour

@@ -4,7 +4,10 @@ import pyautogui
 import pygetwindow as gw
 import cv2
 import numpy as np
-
+from rich.console import Console
+from rich.traceback import install
+console = Console()
+install()
 def move_window_to_top_right(hwnd, window_width, window_height):
     # Get the screen resolution
     screen_width = win32api.GetSystemMetrics(0)  # Get screen width
@@ -19,7 +22,7 @@ def move_window_to_top_right(hwnd, window_width, window_height):
 def findWindow_runelite(Name):
     global hwnd
     hwnd = win32gui.FindWindow(None, "RuneLite - " + Name)
-    print('findWindow_runelite: ', hwnd)
+    console.log('findWindow_runelite: ', hwnd)
 
     # Specify the window size
     window_width = 789
@@ -60,10 +63,10 @@ def get_account_name(filename='account_data.txt'):
             name = file.readline().strip()
         return name
     except FileNotFoundError:
-        print(f"Error: {filename} not found.")
+        console.log(f"Error: {filename} not found.")
         return None
     except Exception as e:
-        print(f"An error occurred while reading {filename}: {e}")
+        console.log(f"An error occurred while reading {filename}: {e}")
         return None
     
 def update_status_file(status):
