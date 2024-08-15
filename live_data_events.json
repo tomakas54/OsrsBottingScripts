@@ -1,0 +1,30 @@
+{
+    "animation": -1,
+    "animation pose": 808,
+    "run energy": 8364,
+    "game tick": 20907,
+    "health": "50/50",
+    "interacting code": "null",
+    "npc name": "null",
+    "npc health ": 0,
+    "MAX_DISTANCE": 2400,
+    "worldPoint": {
+        "x": 3012,
+        "y": 3355,
+        "plane": 0,
+        "regionID": 12084,
+        "regionX": 4,
+        "regionY": 27
+    },
+    "camera": {
+        "yaw": 1382,
+        "pitch": 410,
+        "x": 9165,
+        "y": 3841,
+        "z": -2501
+    },
+    "mouse": {
+        "x": -1,
+        "y": -1
+    }
+}

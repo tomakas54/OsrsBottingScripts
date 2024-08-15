@@ -2,199 +2,131 @@ import time
 import random
 import sys
 import os
-from humancursor import SystemCursor
 from rich.console import Console
 from rich.traceback import install
+from typing import List, Tuple
+
 # Import local modules
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from utils import window_utils, coordinates_utils, image_recognition_utils,hardware_inputs,constants
+from utils import coordinates_utils, image_recognition_utils, hardware_inputs, constants
 from simpy.library import io
 from simpy.library.global_vals import *
 
 install()
-pin_entered = False
 console = Console()
 
+class Bank:
+    def __init__(self):
+        self.coordinates_utils = coordinates_utils.Coordinates()
+        self.image_recognition_utils = image_recognition_utils.ImageRecognition()
+        self.pin_entered = False
 
-def enter_pin(hwnd : int) -> None:
-    global pin_entered
-    _,_,_,_,_,screenshot_path = window_utils.get_window_screenshot(hwnd)
-    pin_matches = image_recognition_utils.template_match(
-        screenshot_path,
-        'assets/bank_pin_flag.png',
-        threshold=0.8
-    )
-    if len(pin_matches) > 0:
-        time.sleep(random.uniform(0.33,0.89))
-        f = open("account_data.txt", "r")
-        lines = f.readlines()
-        hardware_inputs.Write(lines[3].strip())
-        time.sleep(random.uniform(1,2))
-        pin_entered = True
-        return 
-    else:
-        pin_entered = True
-        console.log('NO PIN NEEDED')
-        return
-
-def set_quantity(hwnd : int,quantity : int,cursor) -> None:
-    open_bank(hwnd,cursor)
-    if is_in_bank(hwnd):
-        _,_,_,_,_,screenshot_path = window_utils.get_window_screenshot(hwnd)
-        custom_quantity = False
-        if quantity == 1:
-            console.log('PICKED 1')
-            quantity_coords = image_recognition_utils.generate_random_b_box_coord(
-                image_recognition_utils.template_match(
-                screenshot_path,
-                'assets/quantity_1.png',
-                threshold=0.8,
-                scaling_factor=0.8
-            ))
-        elif quantity == 5:
-            console.log('PICKED 5')
-            quantity_coords = image_recognition_utils.generate_random_b_box_coord(
-                image_recognition_utils.template_match(
-                screenshot_path,
-                'assets/quantity_5.png',
-                threshold=0.8,
-                scaling_factor=0.8
-            ))
-        elif quantity == 10:
-            console.log('PICKED 10')
-            quantity_coords = image_recognition_utils.generate_random_b_box_coord(
-                image_recognition_utils.template_match(
-                screenshot_path,
-                'assets/quantity_10.png',
-                threshold=0.8,
-                scaling_factor=0.8
-            ))
-        elif quantity >= 28:
-            console.log('PICKED ALL')
-            quantity_coords = image_recognition_utils.generate_random_b_box_coord(
-                image_recognition_utils.template_match(
-                screenshot_path,
-                'assets/quantity_all.png',
-                threshold=0.8,
-                scaling_factor=0.8
-            ))
+    def enter_pin(self) -> None:
+        pin_matches = self.image_recognition_utils.template_match('assets/bank_pin_flag.png', threshold=0.8)
+        if pin_matches:
+            time.sleep(random.uniform(0.33, 0.89))
+            with open("account_data.txt", "r") as f:
+                pin = f.readlines()[3].strip()
+            hardware_inputs.Write(pin)
+            time.sleep(random.uniform(1, 2))
+            self.pin_entered = True
         else:
-            console.log('PICKED X')
-            quantity_coords = image_recognition_utils.generate_random_b_box_coord(
-                image_recognition_utils.template_match(
-                screenshot_path,
-                'assets/quantity_x.png',
-                threshold=0.8,
-                scaling_factor=1
-            ))
-            custom_quantity = True
+            self.pin_entered = True
+            console.log('NO PIN NEEDED')
 
-        if not custom_quantity:
-            coordinates_utils.click_coordinates(cursor,quantity_coords[0])
-        else:
-            coordinates_utils.click_coordinates(cursor,quantity_coords[0],'right')
-            time.sleep(random.uniform(0.4,0.6))
-            _,_,_,_,_,screenshot_path = window_utils.get_window_screenshot(hwnd)
-            custom_quantity_coords = image_recognition_utils.generate_random_b_box_coord(
-                image_recognition_utils.template_match(
-                screenshot_path,
-                'assets/custom_quantity_text.png',
-                threshold=0.8,
-                scaling_factor=0.8
-            ))
-            time.sleep(random.uniform(0.25,0.5))
-            io.wind_mouse(custom_quantity_coords[0][0], custom_quantity_coords[0][1], speed=0.2)
-            hardware_inputs.Click('left')
-            time.sleep(random.uniform(0.5,1))
-            hardware_inputs.Write(str(quantity))
-            hardware_inputs.PressButton('enter')
-
-def is_in_bank(hwnd : int) -> bool:
-    _,_,_,_,_,screenshot_path = window_utils.get_window_screenshot(hwnd)
-    bank_item_coords = image_recognition_utils.generate_random_b_box_coord(
-        image_recognition_utils.template_match(
-            screenshot_path,
-            'assets/in_bank_flag.png',
-            threshold=0.8,
-            scaling_factor=0.5
-        ))
-    if len(bank_item_coords) > 0:
-        console.log('IN BANK')
-        return True
-    else:
-        return False
-    
-def open_bank(hwnd : int, cursor : SystemCursor) -> None:
-    screenshot, window_left, window_top, window_width, window_height, _ = window_utils.get_window_screenshot(hwnd)
-    bank_coords = coordinates_utils.find_color_coordinates(screenshot, constants.COLORS["pink"], roi=(0, 0, window_width, window_height))
-    if len(bank_coords) > 0:
-        coordinates_utils.click_coordinates(
-            cursor,
-            coordinates_utils.pick_random_coordinate(
-                bank_coords,
-                window_left,
-                window_top
-            ))
-        time.sleep(random.uniform(0.6, 0.7))        
-    else:
-        console.log('NO BANK FOUND')
-        return
-
-def bank_inventory(hwnd : int, cursor : SystemCursor) -> None:
-        if not is_in_bank(hwnd):
-            global pin_entered
-            open_bank(hwnd,cursor)
-            if not pin_entered:
-                enter_pin(hwnd)
-            _,_,_,_,_,screenshot_path = window_utils.get_window_screenshot(hwnd)
-            bank_item_coords = image_recognition_utils.generate_random_b_box_coord(
-                image_recognition_utils.template_match(
-                    screenshot_path,
-                    'assets/bank_items.png',
-                    threshold=0.8,
-                    scaling_factor=0.5
-                ))
-            coordinates_utils.click_coordinates(cursor,bank_item_coords[0])
-            time.sleep(random.uniform(0.6, 0.7))
-        else:
-            print("CANT FIND BANK")
+    def set_quantity(self, quantity: int) -> None:
+        if not self.open_bank():
+            console.log("Failed to open bank")
             return
 
-def take_item(hwnd,cursor,template_path) -> bool:
-    if is_in_bank(hwnd):
-        no_item = True
-        bank_roi = (*constants.RELATIVE_COORDS['bank'],*constants.ROI_SIZES['bank'])
-        _,_,_,_,_,screenshot_path = window_utils.get_window_screenshot(hwnd)
-        item_coords = image_recognition_utils.generate_random_b_box_coord(
-            image_recognition_utils.template_match(
-                screenshot_path,
-                template_path,
-                threshold=0.8,
-                roi=bank_roi,
-                scaling_factor=0.8
-            ))
-        coordinates_utils.click_coordinates(cursor,item_coords[0])
-        time.sleep(random.uniform(0.5,0.7))
-        _,_,_,_,_,screenshot_path = window_utils.get_window_screenshot(hwnd)
-        no_items_matches = image_recognition_utils.template_match(
-                screenshot_path,
-                'assets/choose.png',
-                threshold=0.8,
-                roi=bank_roi,
-                scaling_factor=0.8
-            )
-        if len(no_items_matches) > 0:
-            console.log('ZERO ITEM QUANTITY')
-            no_item = True
-            return no_item
+        quantity_mapping = {
+            1: 'assets/quantity_1.png',
+            5: 'assets/quantity_5.png',
+            10: 'assets/quantity_10.png',
+        }
+
+        if quantity in quantity_mapping:
+            asset = quantity_mapping[quantity]
+        elif quantity >= 28:
+            asset = 'assets/quantity_all.png'
         else:
-            return False
-    else:
-        console.log('NOT IN BANK')
-        return True
-     
+            asset = 'assets/quantity_x.png'
+
+        quantity_coords = self.get_coordinates(asset)
+        if not quantity_coords:
+            console.log(f"Failed to find quantity button for {quantity}")
+            return
+
+        if asset != 'assets/quantity_x.png':
+            self.coordinates_utils.click_coordinates(quantity_coords[0])
+        else:
+            self.set_custom_quantity(quantity_coords[0], quantity)
+
+    def set_custom_quantity(self, coords: Tuple[int, int], quantity: int) -> None:
+        self.coordinates_utils.click_coordinates(coords, 'right')
+        custom_quantity_coords = self.get_coordinates('assets/custom_quantity_text.png')
+        if not custom_quantity_coords:
+            console.log("Failed to find custom quantity input")
+            return
+
+        io.wind_mouse(custom_quantity_coords[0][0], custom_quantity_coords[0][1], speed=0.2)
+        hardware_inputs.Click('left')
+        time.sleep(random.uniform(0.5, 1))
+        hardware_inputs.Write(str(quantity))
+        hardware_inputs.PressButton('enter')
+
+    def is_in_bank(self) -> bool:
+        bank_item_coords = self.get_coordinates('assets/in_bank_flag.png')
+        return bool(bank_item_coords)
+
+    def open_bank(self) -> bool:
+        bank_coords = self.coordinates_utils.find_color_coordinates(constants.COLORS["pink"])
+        if len(bank_coords) > 0:
+            self.coordinates_utils.click_coordinates(self.coordinates_utils.pick_random_coordinate(bank_coords))
+            return True
+        return False
+
+    def bank_inventory(self) -> None:
+        if not self.is_in_bank():
+            if not self.open_bank():
+                console.log("Failed to open bank")
+                return
+            if not self.pin_entered:
+                self.enter_pin()
+
+        bank_item_coords = self.get_coordinates('assets/bank_items.png')
+        if bank_item_coords:
+            self.coordinates_utils.click_coordinates(bank_item_coords[0])
+        else:
+            console.log('NO BANK ITEM COORDINATES')
+
+    def take_item(self, template_path: str) -> bool:
+        if not self.is_in_bank():
+            console.log('NOT IN BANK')
+            return True
+
+        bank_roi = (*constants.RELATIVE_COORDS['bank'], *constants.ROI_SIZES['bank'])
+        item_coords = self.get_coordinates(template_path, roi=bank_roi)
+        if not item_coords:
+            console.log(f"Failed to find item: {template_path}")
+            return True
+
+        self.coordinates_utils.click_coordinates(item_coords[0])
+        time.sleep(random.uniform(0.5, 0.7))
+
+        no_items_matches = self.get_coordinates('assets/choose.png', roi=bank_roi)
+        if no_items_matches:
+            console.log('ZERO ITEM QUANTITY')
+            return True
+        return False
+
+    def get_coordinates(self, asset: str, roi: Tuple[int, int, int, int] = None, scaling_factor: float = 0.8) -> List[Tuple[int, int]]:
+        return self.image_recognition_utils.generate_random_b_box_coord(
+            self.image_recognition_utils.template_match(asset, threshold=0.8, roi=roi, scaling_factor=scaling_factor)
+        )
 
 if __name__ == "__main__":
-    cursor = SystemCursor()
-    hwnd = window_utils.findWindow_runelite('GIMGrupiokas')
-    enter_pin(hwnd)   
+    bank = Bank()
+    bank.bank_inventory()
+    bank.set_quantity(14)
+    bank.take_item('assets/bow_string.png')

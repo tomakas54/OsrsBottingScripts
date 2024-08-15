@@ -15,7 +15,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from simpy.library import io
 from simpy.library.global_vals import *
 from actions.login import login
-from actions.camera import rotate_camera_till_color,calibrate_camera_rotation,calibrate_camera_zoom
+from camera import Camera
 from utils import break_utils, window_utils, coordinates_utils, image_recognition_utils,hardware_inputs,constants
 from logout import logout
 
@@ -31,8 +31,9 @@ class FishingBot:
         self.cursor = SystemCursor()
         self.hwnd = None
         self.last_xp_drop_time = time.time()
-        self.xp_check_thread = None
-        self.xp_check_stop_event = threading.Event()
+        self.image_recognition_utils = image_recognition_utils.ImageRecognition()
+        self.coordinates_utils = coordinates_utils.Coordinates()
+        self.camera = Camera()
 
     @staticmethod
     @lru_cache(maxsize=None)
@@ -42,11 +43,9 @@ class FishingBot:
         return ((y - 380)**2 + (x - 280)**2)**0.5
 
     def handle_dropping(self) -> None:
-        _,_,_,_,_,screenshot_path = window_utils.get_window_screenshot(self.hwnd)
         roi_inventory = (*constants.RELATIVE_COORDS["inventory"], *constants.ROI_SIZES["inventory"])
-        fish_coords = image_recognition_utils.generate_random_b_box_coord(
-            image_recognition_utils.template_match_multiple(
-                screenshot_path,
+        fish_coords = self.image_recognition_utils.generate_random_b_box_coord(
+            self.image_recognition_utils.template_match_multiple(
                 ['assets/leaping_salmon.png', 'assets/leaping_trout.png', 'assets/leaping_sturgeon.png'],
                 threshold=0.8,
                 roi=roi_inventory,
@@ -54,21 +53,18 @@ class FishingBot:
         ))
         fish_coords_sorted = sorted(fish_coords, key=lambda coord: (coord[1], coord[0]))
         if fish_coords_sorted:
-            coordinates_utils.click_coordinates(self.cursor, fish_coords_sorted[0])
+            self.coordinates_utils.click_coordinates(fish_coords_sorted[0])
             for coord in fish_coords_sorted[1:]:
                 io.wind_mouse(coord[0], coord[1], speed=0.2)
                 hardware_inputs.Click('left')
 
     def handle_fishing(self) -> None:
-        screenshot, window_left, window_top, window_width, window_height,screenshot_path = window_utils.get_window_screenshot(self.hwnd)
-        is_fishing = coordinates_utils.action_check(screenshot)
-
+        is_fishing = self.coordinates_utils.action_check()
+        
         if not is_fishing:
             time.sleep(random.uniform(2.5, 3.5))
-            screenshot,_,_,_,_,screenshot_path = window_utils.get_window_screenshot(self.hwnd)
-            if image_recognition_utils.generate_random_b_box_coord(
-                    image_recognition_utils.template_match(
-                        screenshot_path, 
+            if self.image_recognition_utils.generate_random_b_box_coord(
+                    self.image_recognition_utils.template_match(
                         'assets/full_inv_fish.png', 
                         threshold=0.8)
                 ):
@@ -76,35 +72,23 @@ class FishingBot:
                 if random.random() < 0.5:
                     break_utils.take_a_break(5, 15)
                 self.handle_dropping()
-            fish_spot_coords = tuple(coordinates_utils.find_color_coordinates(screenshot, constants.COLORS["pink"], roi=(0, 0, window_width, window_height)))
+            fish_spot_coords = tuple(self.coordinates_utils.find_color_coordinates(constants.COLORS["pink"]))
             fish_spot_coords = [tuple(coord) if isinstance(coord, np.ndarray) else coord for coord in fish_spot_coords]
             fish_spot_coords = sorted(fish_spot_coords, key=self.distance_from_center)[:50]
             if len(fish_spot_coords) > 0:
-                coordinates_utils.click_coordinates(self.cursor, coordinates_utils.pick_random_coordinate(fish_spot_coords,window_left,window_top))
+                self.coordinates_utils.click_coordinates(self.coordinates_utils.pick_random_coordinate(fish_spot_coords))
             else:
-                rotate_camera_till_color(constants.COLORS['pink'],self.hwnd)    
+                self.camera.rotate_camera_till_color(constants.COLORS['pink'],self.hwnd)    
 
             if random.random() < 0.8:
-                hover_to = coordinates_utils.generate_random_absolute_coords(GetSystemMetrics(0), GetSystemMetrics(1))
+                hover_to = self.coordinates_utils.generate_random_absolute_coords(GetSystemMetrics(0), GetSystemMetrics(1))
                 console.log("HOVERING TO A RANDOM SCREEN COORDS")
                 self.cursor.move_to(hover_to)
             
             time.sleep(random.uniform(10, 12))
 
-    def key_listener(self) -> None:
-        keyboard.wait('q')
-        self.stop_event.set()
-        console.log("Stop event set! Exiting...")
-
-    def xp_check_loop(self):
-        while not self.xp_check_stop_event.is_set():
-            screenshot, _, _, _, _, _ = window_utils.get_window_screenshot(self.hwnd)
-            if coordinates_utils.xp_check(screenshot):
-                self.last_xp_drop_time = time.time()
-            time.sleep(1)  # Check every second
-
-
     def fish(self) -> bool:
+
         name = window_utils.get_account_name()
         if not name:
             console.log("Failed to retrieve account name. Exiting...")
@@ -112,25 +96,13 @@ class FishingBot:
             window_utils.update_status_file(True)
             return self.script_failed
 
-        self.hwnd = window_utils.findWindow_runelite(name)
-        login(self.cursor, self.hwnd)
+        login()
         time_to_stop = break_utils.generate_botting_time(min_time = 2)
 
-        listener_thread = threading.Thread(target=self.key_listener)
-        listener_thread.start()
-
-        self.xp_check_thread = threading.Thread(target=self.xp_check_loop)
-        self.xp_check_thread.start()
-        calibrate_camera_rotation('west')
-        calibrate_camera_zoom(20,'down')
+        self.camera.calibrate_camera_rotation('west')
+        self.camera.calibrate_camera_zoom(20,'down')
         try:
             while time.time() < time_to_stop and not self.stop_event.is_set():
-                _, _, _, _, _ , _= window_utils.get_window_screenshot(self.hwnd)
-                if time.time() - self.last_xp_drop_time > 360:
-                    console.log("XP NOT FOUND FOR A WHILE STOPPING SCRIPT")
-                    self.script_failed = True
-                    window_utils.update_status_file(True)
-                    break
                 self.handle_fishing()
                 time.sleep(0.5)
 
@@ -138,7 +110,7 @@ class FishingBot:
             console.log(f"An error occurred: {e}")
             self.script_failed = True
         finally:
-            logout(self.cursor,self.hwnd)
+            #logout(self.cursor,self.hwnd)
             window_utils.update_status_file(self.script_failed)
 
         return self.script_failed

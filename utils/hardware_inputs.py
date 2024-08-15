@@ -192,7 +192,7 @@ def Write(string: str) -> None:
             PressButton(char)
         time.sleep(random.uniform(0.05, 0.15))  # Small delay between key presses
 
-def ScrollMouse(amount: int, scroll_type: str, horizontal: bool = False,) -> None:
+def ScrollMouse(amount: int, scroll_type: str = 'up', horizontal: bool = False,) -> None:
     """
     Scroll the mouse wheel.
     
@@ -204,9 +204,6 @@ def ScrollMouse(amount: int, scroll_type: str, horizontal: bool = False,) -> Non
         mouseData = 120
     if scroll_type == 'down':
         mouseData = -120
-    else:
-        print('BAD SCROLL TYPE! USE "up" or "down"')
-        return
     if horizontal:
         dwFlags = MOUSEEVENTF_HWHEEL
     else:
@@ -217,5 +214,6 @@ def ScrollMouse(amount: int, scroll_type: str, horizontal: bool = False,) -> Non
                 mi=MOUSEINPUT(dwFlags=dwFlags,
                                 mouseData=mouseData))
         user32.SendInput(1, ctypes.byref(x), ctypes.sizeof(x))
+        
 
 
